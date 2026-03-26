@@ -81,10 +81,9 @@
 //! | `stub_gen` | `false` / `true` / `"feature-name"` | `"python"` |
 //! | `pyclass_args` | token tree forwarded into `#[pyclass(...)]` | _(none)_ |
 //!
-//! Both `feature` and `stub_gen` default to `"python"` because the recommended
-//! setup (below) puts both `pyo3` and `pyo3-stub-gen` under the same feature
-//! flag. This means a single `--features python` activates PyO3, stub
-//! registration, and all `py-compat` gating with zero extra configuration.
+//! By default the `feature` argument is set to `"python"` while `stub_gen` is
+//! disabled (`false`). To enable automatic stub registration set `stub_gen = true`
+//! or pass a feature-name (for example `stub_gen = "stub-gen"`).
 //!
 //! ## Python stub file generation (`.pyi`)
 //!
@@ -171,7 +170,7 @@ impl Default for MacroArgs {
     fn default() -> Self {
         Self {
             feature: "python".to_string(),
-            stub_gen: Some("python".to_string()),
+            stub_gen: None,
             pyclass_args: None,
         }
     }

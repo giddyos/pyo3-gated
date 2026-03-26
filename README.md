@@ -311,7 +311,7 @@ All three macros accept the same optional arguments:
 | Argument | Values | Default | Purpose |
 |---|---|---|---|
 | `feature` | `"feature-name"` | `"python"` | Which Cargo feature enables the Python build |
-| `stub_gen` | `false`, `true`, or `"feature-name"` | `"python"` | Controls automatic stub-registration derive emission |
+| `stub_gen` | `false`, `true`, or `"feature-name"` | `false` | Controls automatic stub-registration derive emission |
 | `pyclass_args` | token tree | none | Forwarded into `#[pyclass(...)]` |
 
 ### Custom Python feature
