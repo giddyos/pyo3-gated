@@ -12,6 +12,9 @@ pub use pyo3_gated_macros::__pyo3_gated_stub_gen_alias;
 #[cfg(feature = "python")]
 pub use pyo3_stub_gen::*;
 
+#[cfg(feature = "python")]
+pub use pyo3_stub_gen::Result as StubGenResult;
+
 #[doc(hidden)]
 pub mod __private {
     #[cfg(feature = "python")]
