@@ -1,0 +1,5 @@
+error: unknown argument `unknown`; expected `feature`, `stub_gen`, or `pyclass_args`
+ --> tests/ui/fail/unknown_argument.rs:3:20
+  |
+3 | #[py_compat_struct(unknown = true)]
+  |                    ^^^^^^^

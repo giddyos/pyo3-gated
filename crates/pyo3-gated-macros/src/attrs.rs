@@ -26,6 +26,35 @@ pub(crate) fn is_gen_stub(attr: &Attribute) -> bool {
     attr.path().is_ident("gen_stub")
 }
 
+pub(crate) fn is_pyo3_method_attr(attr: &Attribute) -> bool {
+    attr.path()
+        .segments
+        .first()
+        .map(|s| {
+            matches!(
+                s.ident.to_string().as_str(),
+                "new"
+                    | "getter"
+                    | "setter"
+                    | "staticmethod"
+                    | "classmethod"
+                    | "classattr"
+                    | "pyo3_raw"
+                    | "args"
+                    | "text_signature"
+            )
+        })
+        .unwrap_or(false)
+}
+
+pub(crate) fn strip_pyo3_from_signature(sig: &mut syn::Signature) {
+    for input in &mut sig.inputs {
+        if let syn::FnArg::Typed(arg) = input {
+            arg.attrs.retain(|a| !is_pyo3_related(a));
+        }
+    }
+}
+
 pub(crate) fn strip_gen_stub_from_item(item: &mut ImplItem) {
     match item {
         ImplItem::Fn(f) => f.attrs.retain(|a| !is_gen_stub(a)),
@@ -66,12 +95,23 @@ pub(crate) fn impl_item_attrs(item: &ImplItem) -> &[Attribute] {
     }
 }
 
-pub(crate) fn clear_impl_item_attrs(item: &mut ImplItem) {
+pub(crate) fn strip_python_attrs_from_impl_item(item: &mut ImplItem) {
     match item {
-        ImplItem::Fn(f) => f.attrs.clear(),
-        ImplItem::Const(c) => c.attrs.clear(),
-        ImplItem::Type(t) => t.attrs.clear(),
-        ImplItem::Macro(m) => m.attrs.clear(),
+        ImplItem::Fn(f) => {
+            f.attrs.retain(|a| {
+                !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a) && !is_pyo3_method_attr(a)
+            });
+            strip_pyo3_from_signature(&mut f.sig);
+        }
+        ImplItem::Const(c) => c
+            .attrs
+            .retain(|a| !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a)),
+        ImplItem::Type(t) => t
+            .attrs
+            .retain(|a| !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a)),
+        ImplItem::Macro(m) => m
+            .attrs
+            .retain(|a| !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a)),
         _ => {}
     }
 }

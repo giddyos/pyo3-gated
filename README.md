@@ -116,7 +116,7 @@ Inside `#[py_compat_methods]`, use these item-level marker attributes:
 | Attribute | Effect |
 |---|---|
 | `#[py_only]` | method exists only in Python builds |
-| `#[py_attrs]` | method exists in both builds, but its attributes are stripped in plain builds |
+| `#[py_attrs]` | method exists in both builds, but Python-specific attributes are stripped in plain builds |
 
 Using `#[py_only]` and `#[py_attrs]` on the same item is a compile error.
 
@@ -209,6 +209,12 @@ pyo3-gated = "^0.1"
 ```
 
 PyO3 field, variant, and function attributes are stripped from the plain build, so no direct `pyo3` dependency is required unless the Python feature is enabled.
+
+## Current Limitations
+
+- `#[py_compat_methods]` supports inherent `impl Type { ... }` blocks, not trait impls.
+- Users should not manually add `#[pyclass]`, `#[pymethods]`, or `#[pyfunction]`; the macros add them.
+- Python builds still require a direct `pyo3` dependency because downstream crates own PyO3 feature selection.
 
 ## License
 
