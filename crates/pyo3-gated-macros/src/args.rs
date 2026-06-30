@@ -26,7 +26,7 @@ impl Default for MacroArgs {
     fn default() -> Self {
         Self {
             feature: "python".to_string(),
-            stub_gen: StubGenMode::Feature("python".to_string()),
+            stub_gen: StubGenMode::Feature("stub-gen".to_string()),
             pyclass_args: None,
         }
     }
@@ -106,7 +106,8 @@ impl Parse for MacroArgs {
 
         let feature = feature.unwrap_or_else(|| "python".to_string());
         let stub_gen = match stub_gen {
-            RawStubGen::Unset | RawStubGen::SameAsFeature => StubGenMode::Feature(feature.clone()),
+            RawStubGen::Unset => StubGenMode::Feature("stub-gen".to_string()),
+            RawStubGen::SameAsFeature => StubGenMode::Feature(feature.clone()),
             RawStubGen::Feature(feature) => StubGenMode::Feature(feature),
             RawStubGen::Disabled => StubGenMode::Disabled,
         };

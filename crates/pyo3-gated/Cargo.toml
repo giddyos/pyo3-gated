@@ -17,8 +17,8 @@ categories = [
 
 [features]
 default = []
-python = ["dep:pyo3-stub-gen"]
-stub-gen = ["python"]
+python = []
+stub-gen = ["python", "dep:pyo3-stub-gen"]
 
 [dependencies]
 pyo3-gated-macros = { version = "=0.1.1", path = "../pyo3-gated-macros" }

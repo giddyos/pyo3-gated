@@ -89,7 +89,7 @@ pub(crate) fn expand_enum(args: MacroArgs, input_enum: ItemEnum) -> TokenStream 
 pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStream {
     if input_impl.trait_.is_some() {
         return syn::Error::new_spanned(
-            &input_impl.impl_token,
+            input_impl.impl_token,
             "`#[py_compat_methods]` only supports inherent `impl Type { ... }` blocks; trait impls are not supported",
         )
         .to_compile_error();

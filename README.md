@@ -12,16 +12,16 @@ pyo3       = { version = "0.28", optional = true }
 [features]
 default = []
 python = ["dep:pyo3", "pyo3-gated/python"]
+stub-gen = ["python", "pyo3-gated/stub-gen"]
 python-extension = [
     "python",
     "pyo3/extension-module",
     "pyo3/generate-import-lib",
 ]
-stub-gen = ["python"]
 ```
 
-```rust
-use pyo3_gated::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+```rust,ignore
+use pyo3_gated::prelude::*;
 
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 
@@ -69,7 +69,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 }
 ```
 
-`cargo build` compiles plain Rust without `pyo3`. `cargo build --features python` emits the PyO3 annotations and `pyo3-stub-gen` registration attributes. Downstream crates own their direct `pyo3` dependency and features; `pyo3-stub-gen` is provided by `pyo3-gated`.
+`cargo build` compiles plain Rust without `pyo3`. `cargo build --features python` emits the PyO3 annotations without pulling stub-generation dependencies. `cargo run --bin stub_gen --features stub-gen` enables `pyo3-stub-gen` registration and stub output. Downstream crates own their direct `pyo3` dependency and features; `pyo3-stub-gen` is provided by `pyo3-gated` only behind `pyo3-gated/stub-gen`.
 
 ## Feature Model
 
@@ -83,15 +83,34 @@ pyo3       = { version = "0.28", optional = true }
 [features]
 default = []
 python = ["dep:pyo3", "pyo3-gated/python"]
+stub-gen = ["python", "pyo3-gated/stub-gen"]
 python-extension = [
     "python",
     "pyo3/extension-module",
     "pyo3/generate-import-lib",
 ]
-stub-gen = ["python"]
 ```
 
 This keeps PyO3 feature choices, such as `extension-module`, `generate-import-lib`, `abi3`, `anyhow`, or other conversion features, under the downstream crate's control.
+
+## Build Recipes
+
+```bash
+# Plain Rust build: no PyO3 dependency needed
+cargo build
+
+# Python-aware Rust build
+cargo build --features python
+
+# Extension-module build
+cargo build --features python-extension
+
+# Build and install the example module with maturin
+maturin develop -m examples/color-module/pyproject.toml
+
+# Generate stubs
+cargo run --bin stub_gen --features stub-gen
+```
 
 ## Macros
 
@@ -106,7 +125,8 @@ Each macro emits two cfg-gated versions:
 
 | Build | Output |
 |---|---|
-| `feature = "python"` | PyO3-annotated item plus stub-gen registration |
+| `feature = "python"` | PyO3-annotated item |
+| `feature = "stub-gen"` | stub-gen registration attributes |
 | no `python` feature | plain Rust item with PyO3 and stub-gen attributes stripped |
 
 ## Method Sentinels
@@ -125,12 +145,12 @@ Using `#[py_only]` and `#[py_attrs]` on the same item is a compile error.
 | Argument | Values | Default | Purpose |
 |---|---|---|---|
 | `feature` | `"feature-name"` | `"python"` | Which Cargo feature enables the Python build |
-| `stub_gen` | `false`, `true`, or `"feature-name"` | `"python"` | Controls automatic stub-registration derive emission |
+| `stub_gen` | `false`, `true`, or `"feature-name"` | `"stub-gen"` | Controls automatic stub-registration derive emission |
 | `pyclass_args` | token tree | none | Forwarded into `#[pyclass(...)]` |
 
-Stub registration is enabled by default under the configured Python feature. Disable it for one item when needed:
+Stub registration is enabled by default under a Cargo feature named `stub-gen`. Disable it for one item when needed:
 
-```rust
+```rust,ignore
 #[py_compat_struct(stub_gen = false)]
 pub struct InternalOnly {
     pub raw: Vec<u8>,
@@ -139,8 +159,8 @@ pub struct InternalOnly {
 
 Use a custom Python feature name:
 
-```rust
-#[py_compat_struct(feature = "pyo3", stub_gen = "pyo3")]
+```rust,ignore
+#[py_compat_struct(feature = "pyo3", stub_gen = "stubs")]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -149,7 +169,7 @@ pub struct Point {
 
 Forward PyO3 class options:
 
-```rust
+```rust,ignore
 #[py_compat_struct(pyclass_args(module = "palette", get_all))]
 pub struct Config {
     pub host: String,
@@ -171,14 +191,14 @@ The macros choose the correct `pyo3-stub-gen` derive automatically:
 
 Define the gatherer once in your library:
 
-```rust
+```rust,ignore
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 ```
 
 Or use the re-exported upstream macro:
 
-```rust
-#[cfg(feature = "python")]
+```rust,ignore
+#[cfg(feature = "stub-gen")]
 pyo3_gated::define_stub_info_gatherer!(stub_info);
 ```
 
@@ -191,11 +211,62 @@ path = "src/bin/stub_gen.rs"
 required-features = ["stub-gen"]
 ```
 
-```rust
+```rust,ignore
 fn main() -> pyo3_gated::StubGenResult<()> {
     let stub = your_crate::stub_info()?;
     stub.generate()?;
     Ok(())
+}
+```
+
+Advanced stub-generation APIs are available under `pyo3_gated::stub_gen` when `stub-gen` is enabled.
+
+## Troubleshooting
+
+`cannot find crate pyo3`: your downstream `python` feature likely enabled `pyo3-gated/python` but not your direct PyO3 dependency. Use `python = ["dep:pyo3", "pyo3-gated/python"]`.
+
+`StubGenResult not found`: build the stub binary with the downstream `stub-gen` feature and wire that feature to `pyo3-gated/stub-gen`. Stub binaries should usually declare `required-features = ["stub-gen"]`.
+
+Python-specific types fail in plain Rust builds: `#[py_attrs]` strips attributes, not Rust types. Methods taking `Python<'_>`, `Bound<'_, PyAny>`, `PyResult<T>`, or other PyO3 types should be `#[py_only]` or manually cfg-gated.
+
+Missing `.pyi` content: confirm the item did not use `stub_gen = false`, the stub binary is run with `--features stub-gen`, and `pyclass_args(module = "...")` matches the module layout you expect.
+
+## Migration From Raw PyO3
+
+Before:
+
+```rust,ignore
+#[cfg_attr(feature = "python", pyclass)]
+pub struct Color {
+    #[cfg_attr(feature = "python", pyo3(get, set))]
+    pub r: u8,
+}
+
+#[cfg_attr(feature = "python", pymethods)]
+impl Color {
+    #[new]
+    pub fn new(r: u8) -> Self {
+        Self { r }
+    }
+}
+```
+
+After:
+
+```rust,ignore
+#[py_compat_struct]
+pub struct Color {
+    #[pyo3(get, set)]
+    pub r: u8,
+}
+
+#[py_compat_methods]
+impl Color {
+    #[py_attrs]
+    #[new]
+    pub fn new(r: u8) -> Self {
+        Self { r }
+    }
 }
 ```
 
@@ -215,6 +286,9 @@ PyO3 field, variant, and function attributes are stripped from the plain build, 
 - `#[py_compat_methods]` supports inherent `impl Type { ... }` blocks, not trait impls.
 - Users should not manually add `#[pyclass]`, `#[pymethods]`, or `#[pyfunction]`; the macros add them.
 - Python builds still require a direct `pyo3` dependency because downstream crates own PyO3 feature selection.
+- Python-specific argument and return types still require cfg control for plain Rust builds.
+- Module registration still uses normal PyO3 `#[pymodule]` boilerplate.
+- `pyo3-gated` does not choose `abi3`, `extension-module`, `auto-initialize`, or conversion features for you.
 
 ## License
 

@@ -1,4 +1,6 @@
-use pyo3_gated::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+use pyo3_gated::prelude::*;
+
+pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 
 #[py_compat_struct]
 #[derive(Clone, Debug, PartialEq, Eq)]

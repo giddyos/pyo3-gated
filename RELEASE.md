@@ -11,6 +11,9 @@
    cargo publish --dry-run -p pyo3-gated-macros
    ```
 
+   `cargo package -p pyo3-gated` can only verify successfully after the matching
+   `pyo3-gated-macros` version exists in the crates.io index.
+
 5. Publish in dependency order:
 
    ```bash

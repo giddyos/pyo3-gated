@@ -1,4 +1,4 @@
-use pyo3_gated::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+use pyo3_gated::prelude::*;
 
 #[cfg(feature = "python")]
 use pyo3::prelude::*;

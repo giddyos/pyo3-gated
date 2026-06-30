@@ -7,6 +7,7 @@ publish = false
 [features]
 default = []
 python = ["dep:pyo3", "gated/python"]
+stub-gen = ["python", "gated/stub-gen"]
 
 [dependencies]
 gated = { package = "pyo3-gated", path = "../../../crates/pyo3-gated" }

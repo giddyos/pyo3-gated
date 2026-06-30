@@ -1,33 +1,42 @@
-//! Write Rust types once and optionally expose them to Python via PyO3.
-//!
-//! Normal builds do not require PyO3. Python-enabled builds require the
-//! downstream crate to enable its own `pyo3` dependency and the
-//! `pyo3-gated/python` feature.
+#![doc = include_str!("../../../README.md")]
 
 pub use pyo3_gated_macros::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
 
 #[doc(hidden)]
 pub use pyo3_gated_macros::__pyo3_gated_stub_gen_alias;
 
-#[cfg(feature = "python")]
-pub use pyo3_stub_gen::*;
-
-#[cfg(feature = "python")]
+#[cfg(feature = "stub-gen")]
 pub use pyo3_stub_gen::Result as StubGenResult;
 
 #[doc(hidden)]
+#[cfg(feature = "stub-gen")]
+pub use pyo3_stub_gen::*;
+
+#[cfg(feature = "stub-gen")]
+pub mod stub_gen {
+    pub use pyo3_stub_gen::*;
+}
+
+pub mod prelude {
+    pub use crate::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+
+    #[cfg(feature = "stub-gen")]
+    pub use crate::StubGenResult;
+}
+
+#[doc(hidden)]
 pub mod __private {
-    #[cfg(feature = "python")]
+    #[cfg(feature = "stub-gen")]
     pub use pyo3_stub_gen;
 }
 
 #[macro_export]
 macro_rules! define_pyo3_gated_stub_info {
     ($name:ident) => {
-        #[cfg(feature = "python")]
+        #[cfg(feature = "stub-gen")]
         $crate::__pyo3_gated_stub_gen_alias!();
 
-        #[cfg(feature = "python")]
+        #[cfg(feature = "stub-gen")]
         $crate::__private::pyo3_stub_gen::define_stub_info_gatherer!($name);
     };
 }

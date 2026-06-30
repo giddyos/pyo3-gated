@@ -16,7 +16,7 @@ python-extension = [
     "pyo3/extension-module",
     "pyo3/generate-import-lib",
 ]
-stub-gen = ["python"]
+stub-gen = ["python", "pyo3-gated/stub-gen"]
 
 [dependencies]
 pyo3-gated = { path = "../../crates/pyo3-gated" }
@@ -27,3 +27,4 @@ anyhow = "1"
 name = "stub_gen"
 path = "src/bin/stub_gen.rs"
 required-features = ["stub-gen"]
+doc = false
