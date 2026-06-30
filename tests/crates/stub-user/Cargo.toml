@@ -1,0 +1,22 @@
+[package]
+name = "stub-user"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "stub_user"
+
+[features]
+default = []
+python = ["dep:pyo3", "pyo3-gated/python"]
+stub-gen = ["python"]
+
+[dependencies]
+pyo3-gated = { path = "../../../crates/pyo3-gated" }
+pyo3 = { version = "0.28", optional = true }
+
+[[bin]]
+name = "stub_gen"
+path = "src/bin/stub_gen.rs"
+required-features = ["stub-gen"]

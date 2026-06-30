@@ -1,24 +1,26 @@
-[package]
-name = "pyo3-gated"
-version = "0.1.0"
+[workspace]
+resolver = "3"
+members = [
+    "crates/pyo3-gated",
+    "crates/pyo3-gated-macros",
+    "examples/color-module",
+    "tests/crates/plain-user",
+    "tests/crates/python-user",
+    "tests/crates/renamed-dep-user",
+    "tests/crates/stub-user",
+]
+
+[workspace.package]
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-description = "Attribute macros to expose Rust types to Python via PyO3 from a single definition — no duplicate structs or impl blocks."
-readme      = "README.md"
-repository  = "https://github.com/giddyos/pyo3-gated"
-homepage    = "https://github.com/giddyos/pyo3-gated"
-keywords    = ["pyo3", "python", "macros", "bindings", "codegen"]
-categories  = [
-    "development-tools::procedural-macro-helpers",
-    "api-bindings",
-    "rust-patterns",
-]
+repository = "https://github.com/giddyos/pyo3-gated"
+homepage = "https://github.com/giddyos/pyo3-gated"
 
-[lib]
-proc-macro = true
-
-[dependencies]
+[workspace.dependencies]
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
+proc-macro-crate = "3"
+pyo3-stub-gen = "0.22.3"
+trybuild = "1"

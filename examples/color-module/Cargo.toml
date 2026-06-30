@@ -1,0 +1,29 @@
+[package]
+name = "pyo3-gated-color-module"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "color_module"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+python = ["dep:pyo3", "pyo3-gated/python"]
+python-extension = [
+    "python",
+    "pyo3/extension-module",
+    "pyo3/generate-import-lib",
+]
+stub-gen = ["python"]
+
+[dependencies]
+pyo3-gated = { path = "../../crates/pyo3-gated" }
+pyo3 = { version = "0.28", optional = true, features = ["anyhow"] }
+anyhow = "1"
+
+[[bin]]
+name = "stub_gen"
+path = "src/bin/stub_gen.rs"
+required-features = ["stub-gen"]
