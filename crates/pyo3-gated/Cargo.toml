@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-gated"
-version = "1.0.0"
+version = "0.1.1"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -21,7 +21,7 @@ python = ["dep:pyo3-stub-gen"]
 stub-gen = ["python"]
 
 [dependencies]
-pyo3-gated-macros = { version = "0.1.0", path = "../pyo3-gated-macros" }
+pyo3-gated-macros = { version = "=0.1.1", path = "../pyo3-gated-macros" }
 pyo3-stub-gen = { workspace = true, optional = true }
 
 [dev-dependencies]

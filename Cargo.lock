@@ -511,7 +511,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-gated"
-version = "1.0.0"
+version = "0.1.1"
 dependencies = [
  "pyo3-gated-macros",
  "pyo3-stub-gen",
@@ -529,7 +529,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-gated-macros"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
