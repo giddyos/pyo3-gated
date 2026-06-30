@@ -1,0 +1,11 @@
+[workspace]
+changelog_update = true
+dependencies_update = true
+
+[[package]]
+name = "pyo3-gated-macros"
+changelog_path = "CHANGELOG.md"
+
+[[package]]
+name = "pyo3-gated"
+changelog_path = "CHANGELOG.md"

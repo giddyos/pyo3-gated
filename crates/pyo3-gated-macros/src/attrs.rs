@@ -19,7 +19,9 @@ pub(crate) fn is_pyo3_related(attr: &Attribute) -> bool {
 }
 
 pub(crate) fn is_sentinel(attr: &Attribute) -> bool {
-    attr.path().is_ident("py_only") || attr.path().is_ident("py_attrs")
+    attr.path().is_ident("py_only")
+        || attr.path().is_ident("py_attrs")
+        || attr.path().is_ident("rust_only")
 }
 
 pub(crate) fn is_gen_stub(attr: &Attribute) -> bool {
@@ -40,7 +42,9 @@ pub(crate) fn is_pyo3_method_attr(attr: &Attribute) -> bool {
                     | "classmethod"
                     | "classattr"
                     | "pyo3_raw"
+                    | "wrap_pyfunction"
                     | "args"
+                    | "name"
                     | "text_signature"
             )
         })
@@ -103,9 +107,9 @@ pub(crate) fn strip_python_attrs_from_impl_item(item: &mut ImplItem) {
             });
             strip_pyo3_from_signature(&mut f.sig);
         }
-        ImplItem::Const(c) => c
-            .attrs
-            .retain(|a| !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a)),
+        ImplItem::Const(c) => c.attrs.retain(|a| {
+            !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a) && !is_pyo3_method_attr(a)
+        }),
         ImplItem::Type(t) => t
             .attrs
             .retain(|a| !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a)),

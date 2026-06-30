@@ -26,6 +26,7 @@ pyo3-stub-gen = { workspace = true, optional = true }
 
 [dev-dependencies]
 trybuild.workspace = true
+macrotest.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true

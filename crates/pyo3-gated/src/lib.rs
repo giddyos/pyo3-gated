@@ -1,6 +1,8 @@
 #![doc = include_str!("../../../README.md")]
 
-pub use pyo3_gated_macros::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+pub use pyo3_gated_macros::{
+    define_py_module, py_compat, py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct,
+};
 
 #[doc(hidden)]
 pub use pyo3_gated_macros::__pyo3_gated_stub_gen_alias;
@@ -18,7 +20,10 @@ pub mod stub_gen {
 }
 
 pub mod prelude {
-    pub use crate::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+    pub use crate::{
+        define_py_module, py_compat, py_compat_enum, py_compat_fn, py_compat_methods,
+        py_compat_struct,
+    };
 
     #[cfg(feature = "stub-gen")]
     pub use crate::StubGenResult;

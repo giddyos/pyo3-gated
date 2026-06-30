@@ -7,7 +7,9 @@
 
    ```bash
    cargo fmt --all -- --check
+   cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace
+   cargo doc --workspace --all-features --no-deps
    cargo publish --dry-run -p pyo3-gated-macros
    ```
 
@@ -24,3 +26,13 @@
    ```
 
 Wait for the crates.io index to include `pyo3-gated-macros` before publishing `pyo3-gated`.
+
+Recommended additional checks before a public release:
+
+```bash
+cargo deny check
+cargo audit
+cargo semver-checks check-release -p pyo3-gated-macros
+cargo semver-checks check-release -p pyo3-gated
+cargo machete
+```

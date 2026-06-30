@@ -31,3 +31,8 @@ fn stub_user_compiles_without_direct_stub_gen_dep() {
 fn renamed_dependency_user_compiles() {
     cargo_check("renamed-dep-user", &["python"]);
 }
+
+#[test]
+fn renamed_pyo3_dependency_user_compiles() {
+    cargo_check("renamed-pyo3-user", &["python"]);
+}

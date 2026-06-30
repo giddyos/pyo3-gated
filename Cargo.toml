@@ -7,6 +7,7 @@ members = [
     "tests/crates/plain-user",
     "tests/crates/python-user",
     "tests/crates/renamed-dep-user",
+    "tests/crates/renamed-pyo3-user",
     "tests/crates/stub-user",
 ]
 
@@ -24,3 +25,4 @@ syn = { version = "2", features = ["full"] }
 proc-macro-crate = "3"
 pyo3-stub-gen = "0.22.3"
 trybuild = "1"
+macrotest = "1.2.1"

@@ -1,5 +1,9 @@
 # pyo3-gated
 
+[![CI](https://github.com/giddyos/pyo3-gated/actions/workflows/ci.yml/badge.svg)](https://github.com/giddyos/pyo3-gated/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/pyo3-gated.svg)](https://crates.io/crates/pyo3-gated)
+[![docs.rs](https://docs.rs/pyo3-gated/badge.svg)](https://docs.rs/pyo3-gated)
+
 Write Rust types once. Use them natively in Rust and optionally expose them to Python via PyO3 without duplicate definitions.
 
 ## Quick Start
@@ -25,7 +29,7 @@ use pyo3_gated::prelude::*;
 
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 
-#[py_compat_struct]
+#[py_compat]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Color {
     #[pyo3(get, set)]
@@ -36,7 +40,7 @@ pub struct Color {
     pub b: u8,
 }
 
-#[py_compat_methods]
+#[py_compat]
 impl Color {
     #[py_attrs]
     #[new]
@@ -52,9 +56,14 @@ impl Color {
     pub fn __repr__(&self) -> String {
         format!("Color(r={}, g={}, b={})", self.r, self.g, self.b)
     }
+
+    #[rust_only]
+    pub fn as_rgb_tuple(&self) -> (u8, u8, u8) {
+        (self.r, self.g, self.b)
+    }
 }
 
-#[py_compat_enum(pyclass_args(eq))]
+#[py_compat(pyclass_args(eq))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Palette {
     Red,
@@ -62,10 +71,15 @@ pub enum Palette {
     Blue,
 }
 
-#[py_compat_fn]
-#[pyo3(signature = (a, b = 0))]
+#[py_compat(pyfunction_args(signature = (a, b = 0)))]
 pub fn add(a: i32, b: i32) -> i32 {
     a + b
+}
+
+pyo3_gated::define_py_module! {
+    module color_module;
+    classes: [Color, Palette];
+    functions: [add];
 }
 ```
 
@@ -116,10 +130,12 @@ cargo run --bin stub_gen --features stub-gen
 
 | Macro | Applies to |
 |---|---|
+| `py_compat` | dispatches over structs, enums, inherent impl blocks, and free functions |
 | `py_compat_struct` | `struct` definitions |
 | `py_compat_enum` | simple and complex `enum` definitions |
 | `py_compat_methods` | inherent `impl` blocks |
 | `py_compat_fn` | free functions |
+| `define_py_module!` | cfg-gated PyO3 module registration |
 
 Each macro emits two cfg-gated versions:
 
@@ -136,9 +152,10 @@ Inside `#[py_compat_methods]`, use these item-level marker attributes:
 | Attribute | Effect |
 |---|---|
 | `#[py_only]` | method exists only in Python builds |
+| `#[rust_only]` | method exists only in plain Rust builds and is not exposed to Python |
 | `#[py_attrs]` | method exists in both builds, but Python-specific attributes are stripped in plain builds |
 
-Using `#[py_only]` and `#[py_attrs]` on the same item is a compile error.
+Combining `#[py_only]`, `#[rust_only]`, and `#[py_attrs]` on the same item is a compile error.
 
 ## Macro Arguments
 
@@ -147,6 +164,9 @@ Using `#[py_only]` and `#[py_attrs]` on the same item is a compile error.
 | `feature` | `"feature-name"` | `"python"` | Which Cargo feature enables the Python build |
 | `stub_gen` | `false`, `true`, or `"feature-name"` | `"stub-gen"` | Controls automatic stub-registration derive emission |
 | `pyclass_args` | token tree | none | Forwarded into `#[pyclass(...)]` |
+| `pyfunction_args` | token tree | none | Forwarded into `#[pyfunction(...)]` |
+| `pyo3_crate` | Rust path string | resolved from Cargo metadata | Override PyO3 crate path, for renamed or re-exported PyO3 |
+| `py_only` | flag | false | Free function exists only in Python builds |
 
 Stub registration is enabled by default under a Cargo feature named `stub-gen`. Disable it for one item when needed:
 
@@ -174,6 +194,43 @@ Forward PyO3 class options:
 pub struct Config {
     pub host: String,
     pub port: u16,
+}
+```
+
+Forward PyO3 function options:
+
+```rust,ignore
+#[py_compat_fn(pyfunction_args(name = "add_numbers", signature = (a, b = 0)))]
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+```
+
+Use a Python-only free function when its signature uses PyO3 types:
+
+```rust,ignore
+#[py_compat_fn(py_only)]
+pub fn inspect_py_object(obj: pyo3::Bound<'_, pyo3::types::PyAny>) -> pyo3::PyResult<String> {
+    Ok(format!("{obj:?}"))
+}
+```
+
+Register a module without handwritten cfg boilerplate:
+
+```rust,ignore
+pyo3_gated::define_py_module! {
+    module color_module;
+    classes: [Color, Palette];
+    functions: [add];
+}
+```
+
+For unusual dependency layouts, override the PyO3 path:
+
+```rust,ignore
+#[py_compat_struct(pyo3_crate = "::py")]
+pub struct Color {
+    pub r: u8,
 }
 ```
 
@@ -284,11 +341,12 @@ PyO3 field, variant, and function attributes are stripped from the plain build, 
 ## Current Limitations
 
 - `#[py_compat_methods]` supports inherent `impl Type { ... }` blocks, not trait impls.
-- Users should not manually add `#[pyclass]`, `#[pymethods]`, or `#[pyfunction]`; the macros add them.
+- Users should not manually add `#[pyclass]`, `#[pymethods]`, `#[pyfunction]`, or `#[pymodule]` to items managed by these macros; the macros add them.
 - Python builds still require a direct `pyo3` dependency because downstream crates own PyO3 feature selection.
 - Python-specific argument and return types still require cfg control for plain Rust builds.
-- Module registration still uses normal PyO3 `#[pymodule]` boilerplate.
 - `pyo3-gated` does not choose `abi3`, `extension-module`, `auto-initialize`, or conversion features for you.
+- Generic PyO3 classes and complex enums remain subject to PyO3 and `pyo3-stub-gen` limitations.
+- Stub generation requires project metadata such as `pyproject.toml` when generating package-oriented stubs.
 
 ## License
 

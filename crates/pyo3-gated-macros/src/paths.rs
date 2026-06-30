@@ -24,3 +24,22 @@ pub(crate) fn pyo3_stub_gen_path() -> TokenStream {
     let facade = facade_crate_path();
     quote!(#facade::__private::pyo3_stub_gen)
 }
+
+pub(crate) fn pyo3_crate_path() -> TokenStream {
+    match crate_name("pyo3") {
+        Ok(FoundCrate::Itself) => quote!(crate),
+        Ok(FoundCrate::Name(name)) => {
+            let ident = Ident::new(&name, Span::call_site());
+            quote!(::#ident)
+        }
+        Err(_) => quote!(::pyo3),
+    }
+}
+
+pub(crate) fn resolved_pyo3_crate_name() -> Option<String> {
+    match crate_name("pyo3") {
+        Ok(FoundCrate::Itself) => Some("pyo3".to_string()),
+        Ok(FoundCrate::Name(name)) => Some(name),
+        Err(_) => None,
+    }
+}

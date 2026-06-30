@@ -1,4 +1,4 @@
-use pyo3_gated::{py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct};
+use pyo3_gated::prelude::*;
 
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 
@@ -20,6 +20,11 @@ impl Color {
     pub fn red(&self) -> u8 {
         self.r
     }
+
+    #[rust_only]
+    pub fn into_inner(self) -> u8 {
+        self.r
+    }
 }
 
 #[py_compat_enum(pyclass_args(skip_from_py_object))]
@@ -36,7 +41,18 @@ pub enum Swatch {
     Named(String),
 }
 
-#[py_compat_fn]
+#[py_compat_fn(pyfunction_args(name = "add_numbers", signature = (a, b = 0)))]
 pub fn add(a: i32, b: i32) -> i32 {
     a + b
+}
+
+#[py_compat_fn(py_only)]
+pub fn inspect_py_object(_obj: pyo3::Bound<'_, pyo3::types::PyAny>) -> pyo3::PyResult<String> {
+    Ok("object".to_string())
+}
+
+pyo3_gated::define_py_module! {
+    module python_user;
+    classes: [Color, Palette];
+    functions: [add, inspect_py_object];
 }

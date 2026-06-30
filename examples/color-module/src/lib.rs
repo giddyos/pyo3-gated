@@ -1,8 +1,5 @@
 use pyo3_gated::prelude::*;
 
-#[cfg(feature = "python")]
-use pyo3::prelude::*;
-
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 
 #[py_compat_struct(pyclass_args(module = "color_module", skip_from_py_object))]
@@ -48,11 +45,8 @@ pub fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-#[cfg(feature = "python")]
-#[pymodule]
-fn color_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Color>()?;
-    m.add_class::<Palette>()?;
-    m.add_function(wrap_pyfunction!(add, m)?)?;
-    Ok(())
+pyo3_gated::define_py_module! {
+    module color_module;
+    classes: [Color, Palette];
+    functions: [add];
 }
