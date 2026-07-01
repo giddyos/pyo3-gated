@@ -6,10 +6,10 @@
 4. Run:
 
    ```bash
-   cargo fmt --all -- --check
-   cargo clippy --workspace --all-targets -- -D warnings
-   cargo test --workspace
-   cargo doc --workspace --all-features --no-deps
+   scripts/check.sh
+   scripts/stub-check.sh
+   cargo tree -d --workspace --features stub-gen
+   cargo tree --workspace --features stub-gen -i pyo3
    cargo publish --dry-run -p pyo3-gated-macros
    ```
 

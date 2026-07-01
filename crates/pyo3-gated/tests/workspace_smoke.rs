@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::process::Command;
 
 fn cargo_check(package: &str, features: &[&str]) {
@@ -12,9 +13,70 @@ fn cargo_check(package: &str, features: &[&str]) {
     assert!(status.success(), "cargo check failed for {package}");
 }
 
+fn cargo_check_manifest(manifest_path: &str, features: &[&str]) {
+    let mut cmd = Command::new("cargo");
+    cmd.arg("check").arg("--manifest-path").arg(manifest_path);
+
+    if !features.is_empty() {
+        cmd.arg("--features").arg(features.join(","));
+    }
+
+    let status = cmd.status().expect("failed to run cargo check");
+    assert!(status.success(), "cargo check failed for {manifest_path}");
+}
+
+fn fixture_manifest(relative_path: &str) -> String {
+    if Path::new(relative_path).exists() {
+        return relative_path.to_string();
+    }
+
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(relative_path)
+        .display()
+        .to_string()
+}
+
+fn cargo_check_manifest_fails(manifest_path: &str, features: &[&str], expected: &str) {
+    let mut cmd = Command::new("cargo");
+    cmd.arg("check").arg("--manifest-path").arg(manifest_path);
+
+    if !features.is_empty() {
+        cmd.arg("--features").arg(features.join(","));
+    }
+
+    let output = cmd.output().expect("failed to run cargo check");
+    assert!(
+        !output.status.success(),
+        "cargo check unexpectedly succeeded for {manifest_path}"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains(expected),
+        "cargo check stderr did not contain expected text.\nexpected: {expected}\nstderr:\n{stderr}"
+    );
+}
+
 #[test]
 fn plain_user_compiles_without_pyo3() {
     cargo_check("plain-user", &[]);
+}
+
+#[test]
+fn missing_pyo3_user_compiles_without_python_feature() {
+    cargo_check_manifest(
+        &fixture_manifest("tests/crates/missing-pyo3-user/Cargo.toml"),
+        &[],
+    );
+}
+
+#[test]
+fn missing_pyo3_user_has_targeted_python_feature_error() {
+    cargo_check_manifest_fails(
+        &fixture_manifest("tests/crates/missing-pyo3-user/Cargo.toml"),
+        &["python"],
+        "pyo3-gated: enabling the Python feature requires a direct optional `pyo3` dependency",
+    );
 }
 
 #[test]

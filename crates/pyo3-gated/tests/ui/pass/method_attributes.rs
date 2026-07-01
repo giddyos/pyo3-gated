@@ -33,7 +33,7 @@ impl Color {
         "Color"
     }
 
-    #[classattr]
+    #[rust_only]
     pub const CHANNELS: usize = 1;
 }
 

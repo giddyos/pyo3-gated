@@ -6,16 +6,7 @@ use crate::args::StubGenMode;
 use crate::paths::pyo3_stub_gen_path;
 
 pub(crate) fn is_pyo3_related(attr: &Attribute) -> bool {
-    attr.path()
-        .segments
-        .first()
-        .map(|s| {
-            matches!(
-                s.ident.to_string().as_str(),
-                "pyo3" | "pyclass" | "pymethods" | "pyfunction" | "pymodule"
-            )
-        })
-        .unwrap_or(false)
+    is_pyo3_container_attr(attr) || is_pyo3_field_attr(attr)
 }
 
 pub(crate) fn is_sentinel(attr: &Attribute) -> bool {
@@ -29,6 +20,10 @@ pub(crate) fn is_gen_stub(attr: &Attribute) -> bool {
 }
 
 pub(crate) fn is_pyo3_method_attr(attr: &Attribute) -> bool {
+    if is_pyo3_signature_attr(attr) {
+        return true;
+    }
+
     attr.path()
         .segments
         .first()
@@ -46,6 +41,40 @@ pub(crate) fn is_pyo3_method_attr(attr: &Attribute) -> bool {
                     | "args"
                     | "name"
                     | "text_signature"
+            )
+        })
+        .unwrap_or(false)
+}
+
+pub(crate) fn is_pyo3_container_attr(attr: &Attribute) -> bool {
+    attr.path()
+        .segments
+        .first()
+        .map(|s| {
+            matches!(
+                s.ident.to_string().as_str(),
+                "pyclass" | "pymethods" | "pyfunction" | "pymodule"
+            )
+        })
+        .unwrap_or(false)
+}
+
+pub(crate) fn is_pyo3_field_attr(attr: &Attribute) -> bool {
+    attr.path()
+        .segments
+        .first()
+        .map(|s| s.ident == "pyo3")
+        .unwrap_or(false)
+}
+
+pub(crate) fn is_pyo3_signature_attr(attr: &Attribute) -> bool {
+    attr.path()
+        .segments
+        .first()
+        .map(|s| {
+            matches!(
+                s.ident.to_string().as_str(),
+                "pyo3" | "args" | "name" | "text_signature"
             )
         })
         .unwrap_or(false)

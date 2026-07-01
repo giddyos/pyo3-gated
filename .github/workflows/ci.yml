@@ -31,25 +31,27 @@ jobs:
           key: rust-1.90
           cache-on-failure: true
 
-      - name: Check formatting
-        run: cargo fmt --all --check
-
-      - name: Check workspace
-        run: cargo check --workspace --all-targets
-
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
-
       - name: Install cargo-expand
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-expand
 
-      - name: Test workspace
-        run: cargo test --workspace
+      - name: Check workspace
+        run: scripts/check.sh
 
-      - name: Build docs
-        run: cargo doc --workspace --all-features --no-deps
+      - name: Verify generated stubs
+        run: scripts/stub-check.sh
+
+      - name: Check PyO3 compatibility tree
+        run: |
+          cargo tree -d --workspace --features stub-gen
+          cargo tree --workspace --features stub-gen -i pyo3
+          versions="$(cargo tree --workspace --features stub-gen -i pyo3 | sed -n 's/^pyo3 v\([^ ]*\).*/\1/p' | sort -u)"
+          count="$(printf '%s\n' "$versions" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" != "1" ]; then
+            printf 'expected exactly one pyo3 version, found:\n%s\n' "$versions"
+            exit 1
+          fi
 
       - name: Package macros
         run: cargo package -p pyo3-gated-macros --allow-dirty

@@ -1,1 +1,4 @@
 /target
+/examples/color-module/color_module.pyi
+/tests/crates/stub-user/stub_user.pyi
+target

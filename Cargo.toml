@@ -10,6 +10,7 @@ members = [
     "tests/crates/renamed-pyo3-user",
     "tests/crates/stub-user",
 ]
+exclude = ["tests/crates/missing-pyo3-user"]
 
 [workspace.package]
 edition = "2024"
@@ -23,6 +24,7 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
 proc-macro-crate = "3"
-pyo3-stub-gen = "0.22.3"
+pyo3 = "0.28"
+pyo3-stub-gen = "0.22.4"
 trybuild = "1"
 macrotest = "1.2.1"

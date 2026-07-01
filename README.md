@@ -85,6 +85,8 @@ pyo3_gated::define_py_module! {
 
 `cargo build` compiles plain Rust without `pyo3`. `cargo build --features python` emits the PyO3 annotations without pulling stub-generation dependencies. `cargo run --bin stub_gen --features stub-gen` enables `pyo3-stub-gen` registration and stub output. Downstream crates own their direct `pyo3` dependency and features; `pyo3-stub-gen` is provided by `pyo3-gated` only behind `pyo3-gated/stub-gen`.
 
+Before opening a PR, run `scripts/check.sh`. If your change affects stub generation, run `scripts/stub-check.sh` too.
+
 ## Feature Model
 
 `pyo3-gated` assumes a Cargo feature named `python` by default.
@@ -157,6 +159,8 @@ Inside `#[py_compat_methods]`, use these item-level marker attributes:
 
 Combining `#[py_only]`, `#[rust_only]`, and `#[py_attrs]` on the same item is a compile error.
 
+Only functions are exposed to PyO3 from `#[py_compat_methods]`. Associated consts, associated types, and macro items must be marked `#[rust_only]` or moved outside the PyO3-managed impl block.
+
 ## Macro Arguments
 
 | Argument | Values | Default | Purpose |
@@ -220,8 +224,14 @@ Register a module without handwritten cfg boilerplate:
 ```rust,ignore
 pyo3_gated::define_py_module! {
     module color_module;
+    doc: "Example color module.";
     classes: [Color, Palette];
     functions: [add];
+    constants: [("VERSION", env!("CARGO_PKG_VERSION"))];
+    init: |m| {
+        let _ = m;
+        Ok(())
+    };
 }
 ```
 
@@ -252,12 +262,14 @@ Define the gatherer once in your library:
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 ```
 
-Or use the re-exported upstream macro:
+The older compatibility alias is still available:
 
 ```rust,ignore
 #[cfg(feature = "stub-gen")]
 pyo3_gated::define_stub_info_gatherer!(stub_info);
 ```
+
+`define_pyo3_gated_stub_info!` is the preferred macro. `define_stub_info_gatherer!` remains as a compatibility alias.
 
 Then gate your stub-generation binary with `stub-gen`:
 
@@ -278,9 +290,17 @@ fn main() -> pyo3_gated::StubGenResult<()> {
 
 Advanced stub-generation APIs are available under `pyo3_gated::stub_gen` when `stub-gen` is enabled.
 
+## Compatibility Policy
+
+| `pyo3-gated` version | Supported `pyo3` range | Bundled `pyo3-stub-gen` |
+|---|---|---|
+| `0.1.x` | `0.28` | `0.22.4` |
+
+Downstream crates choose their direct `pyo3` dependency and PyO3 feature flags. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
+
 ## Troubleshooting
 
-`cannot find crate pyo3`: your downstream `python` feature likely enabled `pyo3-gated/python` but not your direct PyO3 dependency. Use `python = ["dep:pyo3", "pyo3-gated/python"]`.
+`pyo3-gated: enabling the Python feature requires a direct optional pyo3 dependency`: your downstream `python` feature enabled `pyo3-gated/python` but not your direct PyO3 dependency. Use `python = ["dep:pyo3", "pyo3-gated/python"]`, or pass `pyo3_crate = "::your_path"` for unusual re-export layouts.
 
 `StubGenResult not found`: build the stub binary with the downstream `stub-gen` feature and wire that feature to `pyo3-gated/stub-gen`. Stub binaries should usually declare `required-features = ["stub-gen"]`.
 

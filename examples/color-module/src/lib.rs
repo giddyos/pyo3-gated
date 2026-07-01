@@ -47,6 +47,12 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 pyo3_gated::define_py_module! {
     module color_module;
+    doc: "Example pyo3-gated color module.";
     classes: [Color, Palette];
     functions: [add];
+    constants: [("VERSION", env!("CARGO_PKG_VERSION"))];
+    init: |m| {
+        let _ = m;
+        Ok(())
+    };
 }

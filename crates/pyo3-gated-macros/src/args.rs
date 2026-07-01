@@ -1,6 +1,6 @@
 use proc_macro2::{Span, TokenStream};
 use syn::{
-    LitBool, LitStr, Token,
+    Expr, ExprClosure, LitBool, LitStr, Token,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
 };
@@ -25,6 +25,14 @@ pub(crate) struct ModuleArgs {
     pub module: syn::Ident,
     pub classes: Vec<syn::Type>,
     pub functions: Vec<syn::Path>,
+    pub constants: Vec<ModuleConstant>,
+    pub init: Option<ExprClosure>,
+    pub doc: Option<LitStr>,
+}
+
+pub(crate) struct ModuleConstant {
+    pub name: LitStr,
+    pub value: Expr,
 }
 
 pub(crate) enum StubGenMode {
@@ -280,6 +288,9 @@ impl Parse for ModuleArgs {
         let mut module = None::<syn::Ident>;
         let mut classes = Vec::<syn::Type>::new();
         let mut functions = Vec::<syn::Path>::new();
+        let mut constants = Vec::<ModuleConstant>::new();
+        let mut init = None::<ExprClosure>;
+        let mut doc = None::<LitStr>;
 
         while !input.is_empty() {
             let ident: syn::Ident = input.parse()?;
@@ -329,11 +340,34 @@ impl Parse for ModuleArgs {
                         .into_iter()
                         .collect();
                 }
+                "constants" => {
+                    input.parse::<Token![:]>()?;
+                    let content;
+                    syn::bracketed!(content in input);
+                    constants =
+                        Punctuated::<ModuleConstant, Token![,]>::parse_terminated(&content)?
+                            .into_iter()
+                            .collect();
+                }
+                "init" => {
+                    if init.is_some() {
+                        return Err(syn::Error::new(ident.span(), "duplicate `init` entry"));
+                    }
+                    input.parse::<Token![:]>()?;
+                    init = Some(input.parse()?);
+                }
+                "doc" => {
+                    if doc.is_some() {
+                        return Err(syn::Error::new(ident.span(), "duplicate `doc` entry"));
+                    }
+                    input.parse::<Token![:]>()?;
+                    doc = Some(input.parse()?);
+                }
                 other => {
                     return Err(syn::Error::new(
                         ident.span(),
                         format!(
-                            "unknown module entry `{other}`; expected `module`, `classes`, `functions`, `feature`, or `pyo3_crate`"
+                            "unknown module entry `{other}`; expected `module`, `classes`, `functions`, `constants`, `init`, `doc`, `feature`, or `pyo3_crate`"
                         ),
                     ));
                 }
@@ -357,6 +391,20 @@ impl Parse for ModuleArgs {
             module,
             classes,
             functions,
+            constants,
+            init,
+            doc,
         })
+    }
+}
+
+impl Parse for ModuleConstant {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        syn::parenthesized!(content in input);
+        let name = content.parse::<LitStr>()?;
+        content.parse::<Token![,]>()?;
+        let value = content.parse::<Expr>()?;
+        Ok(Self { name, value })
     }
 }

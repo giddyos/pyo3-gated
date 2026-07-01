@@ -1,19 +1,15 @@
 # Contributing
 
-Before opening a pull request, run:
+Run the main validation script before opening a PR:
 
 ```bash
-cargo fmt --all --check
-cargo check --workspace --all-targets
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-cargo doc --workspace --all-features --no-deps
+scripts/check.sh
 ```
 
-Expansion snapshots are checked by `cargo test` when a modern `cargo-expand` is available. Install it with:
+If your change affects stub generation, also run:
 
 ```bash
-cargo install cargo-expand --locked
+scripts/stub-check.sh
 ```
 
-Feature-related changes should include coverage for plain Rust builds, Python-enabled builds, and stub-generation builds when applicable.
+UI tests use trybuild snapshots under `crates/pyo3-gated/tests/ui`. When a diagnostic intentionally changes, rerun the relevant test with `TRYBUILD=overwrite` and review the updated `.stderr` file before committing it.

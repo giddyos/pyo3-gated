@@ -36,6 +36,21 @@ pub(crate) fn pyo3_crate_path() -> TokenStream {
     }
 }
 
+pub(crate) fn pyo3_missing_diagnostic(
+    feature: &str,
+    override_present: bool,
+) -> Option<TokenStream> {
+    if override_present || crate_name("pyo3").is_ok() {
+        return None;
+    }
+
+    Some(quote! {
+        #[allow(unexpected_cfgs)]
+        #[cfg(feature = #feature)]
+        compile_error!("pyo3-gated: enabling the Python feature requires a direct optional `pyo3` dependency, e.g. `pyo3 = { version = \"0.28\", optional = true }`, or a `pyo3_crate = \"...\"` override.");
+    })
+}
+
 pub(crate) fn resolved_pyo3_crate_name() -> Option<String> {
     match crate_name("pyo3") {
         Ok(FoundCrate::Itself) => Some("pyo3".to_string()),

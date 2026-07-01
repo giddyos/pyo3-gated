@@ -9,6 +9,7 @@ use crate::attrs::{
     strip_pyo3_from_fields, strip_pyo3_from_signature, strip_pyo3_from_variants,
     strip_python_attrs_from_impl_item, strip_sentinels, stub_attr,
 };
+use crate::paths::pyo3_missing_diagnostic;
 
 pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenStream {
     if let Some(error) = args.reject_fn_only_args() {
@@ -16,6 +17,7 @@ pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenS
     }
 
     let feature = &args.feature;
+    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let mut py_struct = input_struct.clone();
     let mut plain_struct = input_struct;
@@ -38,6 +40,7 @@ pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenS
     );
 
     quote! {
+        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -56,6 +59,7 @@ pub(crate) fn expand_enum(args: MacroArgs, input_enum: ItemEnum) -> TokenStream 
     }
 
     let feature = &args.feature;
+    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let stub_kind = if is_simple_enum(&input_enum) {
         StubKind::SimpleEnum
@@ -84,6 +88,7 @@ pub(crate) fn expand_enum(args: MacroArgs, input_enum: ItemEnum) -> TokenStream 
     );
 
     quote! {
+        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -118,6 +123,7 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
     }
 
     let feature = &args.feature;
+    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let self_ty = &input_impl.self_ty;
     let (impl_generics, _ty_generics, where_clause) = input_impl.generics.split_for_impl();
@@ -156,6 +162,13 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
             return syn::Error::new_spanned(
                 item,
                 "`#[py_attrs]` and `#[rust_only]` cannot both appear on the same item",
+            )
+            .to_compile_error();
+        }
+        if !matches!(item, syn::ImplItem::Fn(_)) && !is_rust_only {
+            return syn::Error::new_spanned(
+                item,
+                "`#[py_compat_methods]` can only expose functions to PyO3; mark associated consts/types/macros as `#[rust_only]` or move them outside the PyO3 impl block",
             )
             .to_compile_error();
         }
@@ -200,6 +213,7 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
     let pymethods_inner = attr_args(args.pyo3_crate_attr(), None);
 
     quote! {
+        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -224,6 +238,7 @@ pub(crate) fn expand_fn(args: MacroArgs, input_fn: syn::ItemFn) -> TokenStream {
     }
 
     let feature = &args.feature;
+    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let mut py_fn = input_fn.clone();
     let mut plain_fn = input_fn;
@@ -253,6 +268,7 @@ pub(crate) fn expand_fn(args: MacroArgs, input_fn: syn::ItemFn) -> TokenStream {
     };
 
     quote! {
+        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -279,15 +295,29 @@ pub(crate) fn expand_dispatch(args: MacroArgs, item: Item) -> TokenStream {
 
 pub(crate) fn expand_module(args: ModuleArgs) -> TokenStream {
     let feature = &args.feature;
+    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let pymodule_inner = attr_args(args.pyo3_crate_attr(), None);
     let module = &args.module;
     let classes = &args.classes;
     let functions = &args.functions;
+    let constants = &args.constants;
+    let constant_names = constants.iter().map(|c| &c.name);
+    let constant_values = constants.iter().map(|c| &c.value);
+    let init = args.init.as_ref();
+    let doc_attr = args.doc.as_ref().map(|doc| quote! { #[doc = #doc] });
+    let init_call = init.map(|init| {
+        quote! {
+            let __pyo3_gated_init_result: #pyo3::PyResult<()> = (#init)(m);
+            __pyo3_gated_init_result?;
+        }
+    });
 
     quote! {
+        #missing_pyo3
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
+        #doc_attr
         #[#pyo3::pymodule #pymodule_inner]
         fn #module(
             m: &#pyo3::Bound<'_, #pyo3::types::PyModule>
@@ -299,6 +329,10 @@ pub(crate) fn expand_module(args: ModuleArgs) -> TokenStream {
             #(
                 m.add_function(#pyo3::wrap_pyfunction!(#functions, m)?)?;
             )*
+            #(
+                m.add(#constant_names, #constant_values)?;
+            )*
+            #init_call
             Ok(())
         }
     }

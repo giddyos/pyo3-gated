@@ -1,0 +1,37 @@
+name: Bug report
+description: Report incorrect behavior in pyo3-gated
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: pyo3-gated version
+      placeholder: "0.1.1"
+    validations:
+      required: true
+  - type: input
+    id: pyo3-version
+    attributes:
+      label: PyO3 version
+      placeholder: "0.28"
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Include the smallest Cargo.toml and Rust snippet that reproduces the issue.
+      render: rust
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Compiler output
+      render: text
