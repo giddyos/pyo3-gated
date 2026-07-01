@@ -1,4 +1,4 @@
-#![doc = include_str!("../../../README.md")]
+#![doc = include_str!("../../../../README.md")]
 
 pub use pyo3_gated_macros::{
     define_py_module, py_compat, py_compat_enum, py_compat_fn, py_compat_methods, py_compat_struct,
