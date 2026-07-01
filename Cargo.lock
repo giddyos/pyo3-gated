@@ -768,6 +768,7 @@ dependencies = [
  "pyo3",
  "pyo3-gated-macros",
  "pyo3-stub-gen",
+ "serde_json",
  "trybuild",
 ]
 

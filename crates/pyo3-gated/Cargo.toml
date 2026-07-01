@@ -53,6 +53,7 @@ either = ["python", "pyo3/either"]
 eyre = ["python", "pyo3/eyre"]
 hashbrown = ["python", "pyo3/hashbrown"]
 indexmap = ["python", "pyo3/indexmap"]
+inventory = ["python", "pyo3/inventory"]
 jiff-02 = ["python", "pyo3/jiff-02"]
 lock_api = ["python", "pyo3/lock_api"]
 num-bigint = ["python", "pyo3/num-bigint"]
@@ -75,6 +76,7 @@ pyo3-stub-gen = { workspace = true, optional = true }
 [dev-dependencies]
 trybuild.workspace = true
 macrotest.workspace = true
+serde_json = "1"
 
 [package.metadata.docs.rs]
 features = ["full", "stub-gen"]

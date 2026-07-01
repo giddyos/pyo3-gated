@@ -20,6 +20,7 @@ if [ "$count" != "1" ]; then
     printf 'expected exactly one pyo3 version, found:\n%s\n' "$versions"
     exit 1
 fi
+cargo test -p pyo3-gated --test feature_surface
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo doc --workspace --no-deps
