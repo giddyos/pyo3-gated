@@ -5,9 +5,9 @@ use syn::{Item, ItemEnum, ItemImpl, ItemStruct};
 use crate::args::{MacroArgs, ModuleArgs};
 use crate::attrs::{
     StubKind, impl_item_attrs, is_gen_stub, is_pyo3_related, is_simple_enum,
-    strip_gen_stub_from_fields, strip_gen_stub_from_item, strip_gen_stub_from_variants,
-    strip_pyo3_from_fields, strip_pyo3_from_signature, strip_pyo3_from_variants,
-    strip_python_attrs_from_impl_item, strip_sentinels, stub_attr,
+    strip_gen_stub_from_fields, strip_gen_stub_from_item, strip_gen_stub_from_signature,
+    strip_gen_stub_from_variants, strip_pyo3_from_fields, strip_pyo3_from_signature,
+    strip_pyo3_from_variants, strip_python_attrs_from_impl_item, strip_sentinels, stub_attr,
 };
 
 pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenStream {
@@ -238,9 +238,11 @@ pub(crate) fn expand_fn(args: MacroArgs, input_fn: syn::ItemFn) -> TokenStream {
         .attrs
         .retain(|a| !is_pyo3_related(a) && !is_gen_stub(a));
     strip_pyo3_from_signature(&mut plain_fn.sig);
+    strip_gen_stub_from_signature(&mut plain_fn.sig);
 
     if args.should_strip_stub_gen() {
         py_fn.attrs.retain(|a| !is_gen_stub(a));
+        strip_gen_stub_from_signature(&mut py_fn.sig);
     }
 
     let stub = stub_attr(&args.stub_gen, StubKind::Function);

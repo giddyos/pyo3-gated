@@ -21,7 +21,8 @@ impl Color {
 }
 
 #[py_compat_fn(stub_gen = false, pyfunction_args(name = "add_numbers"))]
-pub fn add(a: i32, b: i32) -> i32 {
+#[gen_stub(override_return_type(type_repr = "int"))]
+pub fn add(#[gen_stub(override_type(type_repr = "int"))] a: i32, b: i32) -> i32 {
     a + b
 }
 

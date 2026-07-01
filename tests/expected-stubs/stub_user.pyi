@@ -6,6 +6,7 @@ import typing
 __all__ = [
     "Color",
     "add",
+    "callback",
 ]
 
 @typing.final
@@ -18,4 +19,6 @@ class Color:
     def red(self) -> builtins.int: ...
 
 def add(a: builtins.int, b: builtins.int) -> builtins.int: ...
+
+def callback(value: collections.abc.Callable) -> object: ...
 

@@ -88,9 +88,20 @@ pub(crate) fn strip_pyo3_from_signature(sig: &mut syn::Signature) {
     }
 }
 
+pub(crate) fn strip_gen_stub_from_signature(sig: &mut syn::Signature) {
+    for input in &mut sig.inputs {
+        if let syn::FnArg::Typed(arg) = input {
+            arg.attrs.retain(|a| !is_gen_stub(a));
+        }
+    }
+}
+
 pub(crate) fn strip_gen_stub_from_item(item: &mut ImplItem) {
     match item {
-        ImplItem::Fn(f) => f.attrs.retain(|a| !is_gen_stub(a)),
+        ImplItem::Fn(f) => {
+            f.attrs.retain(|a| !is_gen_stub(a));
+            strip_gen_stub_from_signature(&mut f.sig);
+        }
         ImplItem::Const(c) => c.attrs.retain(|a| !is_gen_stub(a)),
         ImplItem::Type(t) => t.attrs.retain(|a| !is_gen_stub(a)),
         ImplItem::Macro(m) => m.attrs.retain(|a| !is_gen_stub(a)),
@@ -135,6 +146,7 @@ pub(crate) fn strip_python_attrs_from_impl_item(item: &mut ImplItem) {
                 !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a) && !is_pyo3_method_attr(a)
             });
             strip_pyo3_from_signature(&mut f.sig);
+            strip_gen_stub_from_signature(&mut f.sig);
         }
         ImplItem::Const(c) => c.attrs.retain(|a| {
             !is_sentinel(a) && !is_gen_stub(a) && !is_pyo3_related(a) && !is_pyo3_method_attr(a)
