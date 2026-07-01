@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Attribute macros to expose Rust types to Python via PyO3 from a single definition - no duplicate structs or impl blocks."
-readme = "../../README.md"
+readme = "README.md"
 keywords = ["pyo3", "python", "macros", "bindings", "codegen"]
 categories = [
     "development-tools::procedural-macro-helpers",
