@@ -98,7 +98,7 @@ jobs:
     name: Python smoke ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version: ["3.10", "3.12", "3.13", "3.14"]
 
@@ -123,9 +123,36 @@ jobs:
       - name: Install maturin
         run: python -m pip install --upgrade pip maturin
 
-      - name: Build example wheel
-        run: maturin build --out ../../dist
+      - name: Generate stubs
         working-directory: examples/color-module
+        run: cargo run --features stub-gen --bin stub_gen
+
+      - name: Debug - list files after stub generation
+        if: always()
+        working-directory: examples/color-module
+        run: |
+          echo "::group::Files in examples/color-module"
+          find . -maxdepth 3 -type f | sort
+          echo "::endgroup::"
+          echo "::group::Any .pyi files found anywhere in repo"
+          find "${GITHUB_WORKSPACE}" -name "*.pyi" -not -path "*/target/*"
+          echo "::endgroup::"
+
+      - name: Build example wheel
+        run: maturin build --out ../../dist --verbose
+        working-directory: examples/color-module
+
+      - name: Debug - inspect built wheel contents
+        if: always()
+        run: |
+          echo "::group::Wheel files in dist/"
+          ls -la dist/
+          echo "::endgroup::"
+          for whl in dist/*.whl; do
+            echo "::group::Contents of $whl"
+            python -m zipfile -l "$whl"
+            echo "::endgroup::"
+          done
 
       - name: Verify wheel stubs
         run: |
@@ -137,11 +164,43 @@ jobs:
           with zipfile.ZipFile(wheel) as z:
               names = set(z.namelist())
 
-          assert any(name.startswith("color_module/color_module.cpython-") and name.endswith("-linux-gnu.so") for name in names), sorted(names)
+          print(f"Inspecting wheel: {wheel}")
+          print("Full contents:")
+          for n in sorted(names):
+              print(f"  {n}")
+
+          so_file = next(
+              (n for n in names
+               if n.startswith("color_module/color_module.cpython-")
+               and n.endswith("-linux-gnu.so")),
+              None,
+          )
+          assert so_file is not None, f"No .so found. Wheel contents:\n{sorted(names)}"
+          print(f"Found .so: {so_file}")
+
+          pyi_files = [n for n in names if n.startswith("color_module/") and n.endswith(".pyi")]
+          assert pyi_files, f"No .pyi stub found anywhere. Wheel contents:\n{sorted(names)}"
+          print(f"Found .pyi files: {pyi_files}")
           PY
 
       - name: Install example wheel
-        run: python -m pip install dist/*.whl
+        run: python -m pip install dist/*.whl --force-reinstall
+
+      - name: Debug - inspect installed package
+        if: always()
+        run: |
+          echo "::group::Installed package location"
+          python -c "import color_module; print(color_module.__file__)"
+          echo "::endgroup::"
+          echo "::group::Files in installed package directory"
+          python -c "
+          from pathlib import Path
+          import color_module
+          pkg_dir = Path(color_module.__file__).parent
+          for f in sorted(pkg_dir.rglob('*')):
+              print(f)
+          "
+          echo "::endgroup::"
 
       - name: Smoke test example module
         run: |
@@ -150,8 +209,25 @@ jobs:
           import color_module
 
           c = color_module.Color(1, 2, 3)
-          assert c.to_hex() == "#010203"
-          assert color_module.add(1, 2) == 3
+          assert c.to_hex() == "#010203", f"to_hex() mismatch: got {c.to_hex()!r}"
+          assert color_module.add(1, 2) == 3, f"add() mismatch: got {color_module.add(1, 2)!r}"
           assert color_module.Palette.Red == color_module.Palette.Red
-          assert Path(color_module.__file__).with_suffix(".pyi").is_file()
+
+          pkg_dir = Path(color_module.__file__).parent
+          pyi_files = list(pkg_dir.glob("*.pyi"))
+          assert pyi_files, (
+              f"No .pyi stub found in {pkg_dir}. "
+              f"Directory contents: {sorted(pkg_dir.iterdir())}"
+          )
+          print(f"All checks passed. Found stubs: {pyi_files}")
           PY
+
+      - name: Upload wheel and stub artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-python-${{ matrix.python-version }}
+          path: |
+            dist/
+            examples/color-module/**/*.pyi
+          retention-days: 3
