@@ -13,7 +13,7 @@ members = [
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.90"
 license = "MIT"
 repository = "https://github.com/giddyos/pyo3-gated"
 homepage = "https://github.com/giddyos/pyo3-gated"
