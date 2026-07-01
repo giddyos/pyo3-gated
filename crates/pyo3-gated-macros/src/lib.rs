@@ -16,6 +16,7 @@ use args::{MacroArgs, ModuleArgs};
 pub fn __pyo3_gated_stub_gen_alias(_input: TokenStream) -> TokenStream {
     let facade = paths::facade_crate_ident();
     quote! {
+        extern crate #facade as pyo3;
         extern crate #facade as pyo3_stub_gen;
     }
     .into()

@@ -9,7 +9,6 @@ use crate::attrs::{
     strip_pyo3_from_fields, strip_pyo3_from_signature, strip_pyo3_from_variants,
     strip_python_attrs_from_impl_item, strip_sentinels, stub_attr,
 };
-use crate::paths::pyo3_missing_diagnostic;
 
 pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenStream {
     if let Some(error) = args.reject_fn_only_args() {
@@ -17,7 +16,6 @@ pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenS
     }
 
     let feature = &args.feature;
-    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let mut py_struct = input_struct.clone();
     let mut plain_struct = input_struct;
@@ -40,7 +38,6 @@ pub(crate) fn expand_struct(args: MacroArgs, input_struct: ItemStruct) -> TokenS
     );
 
     quote! {
-        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -59,7 +56,6 @@ pub(crate) fn expand_enum(args: MacroArgs, input_enum: ItemEnum) -> TokenStream 
     }
 
     let feature = &args.feature;
-    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let stub_kind = if is_simple_enum(&input_enum) {
         StubKind::SimpleEnum
@@ -88,7 +84,6 @@ pub(crate) fn expand_enum(args: MacroArgs, input_enum: ItemEnum) -> TokenStream 
     );
 
     quote! {
-        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -123,7 +118,6 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
     }
 
     let feature = &args.feature;
-    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let self_ty = &input_impl.self_ty;
     let (impl_generics, _ty_generics, where_clause) = input_impl.generics.split_for_impl();
@@ -213,7 +207,6 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
     let pymethods_inner = attr_args(args.pyo3_crate_attr(), None);
 
     quote! {
-        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -238,7 +231,6 @@ pub(crate) fn expand_fn(args: MacroArgs, input_fn: syn::ItemFn) -> TokenStream {
     }
 
     let feature = &args.feature;
-    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let mut py_fn = input_fn.clone();
     let mut plain_fn = input_fn;
@@ -268,7 +260,6 @@ pub(crate) fn expand_fn(args: MacroArgs, input_fn: syn::ItemFn) -> TokenStream {
     };
 
     quote! {
-        #missing_pyo3
         #stub
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
@@ -295,7 +286,6 @@ pub(crate) fn expand_dispatch(args: MacroArgs, item: Item) -> TokenStream {
 
 pub(crate) fn expand_module(args: ModuleArgs) -> TokenStream {
     let feature = &args.feature;
-    let missing_pyo3 = pyo3_missing_diagnostic(feature, args.pyo3_crate.is_some());
     let pyo3 = args.pyo3_path();
     let pymodule_inner = attr_args(args.pyo3_crate_attr(), None);
     let module = &args.module;
@@ -314,7 +304,6 @@ pub(crate) fn expand_module(args: ModuleArgs) -> TokenStream {
     });
 
     quote! {
-        #missing_pyo3
         #[allow(unexpected_cfgs)]
         #[cfg(feature = #feature)]
         #doc_attr

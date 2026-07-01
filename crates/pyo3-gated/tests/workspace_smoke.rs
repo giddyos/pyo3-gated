@@ -56,27 +56,6 @@ fn fixture_manifest(relative_path: &str) -> String {
         .to_string()
 }
 
-fn cargo_check_manifest_fails(manifest_path: &str, features: &[&str], expected: &str) {
-    let mut cmd = Command::new("cargo");
-    configure_cargo_command(&mut cmd);
-    cmd.arg("check").arg("--manifest-path").arg(manifest_path);
-
-    if !features.is_empty() {
-        cmd.arg("--features").arg(features.join(","));
-    }
-
-    let output = cmd.output().expect("failed to run cargo check");
-    assert!(
-        !output.status.success(),
-        "cargo check unexpectedly succeeded for {manifest_path}"
-    );
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(
-        stderr.contains(expected),
-        "cargo check stderr did not contain expected text.\nexpected: {expected}\nstderr:\n{stderr}"
-    );
-}
-
 #[test]
 fn plain_user_compiles_without_pyo3() {
     cargo_check("plain-user", &[]);
@@ -91,11 +70,10 @@ fn missing_pyo3_user_compiles_without_python_feature() {
 }
 
 #[test]
-fn missing_pyo3_user_has_targeted_python_feature_error() {
-    cargo_check_manifest_fails(
+fn missing_pyo3_user_compiles_with_facade_python_feature() {
+    cargo_check_manifest(
         &fixture_manifest("tests/crates/missing-pyo3-user/Cargo.toml"),
         &["python"],
-        "pyo3-gated: enabling the Python feature requires a direct optional `pyo3` dependency",
     );
 }
 
@@ -117,4 +95,23 @@ fn renamed_dependency_user_compiles() {
 #[test]
 fn renamed_pyo3_dependency_user_compiles() {
     cargo_check("renamed-pyo3-user", &["python"]);
+}
+
+#[test]
+fn facade_pyo3_user_compiles_without_direct_pyo3() {
+    cargo_check("facade-pyo3-user", &[]);
+    cargo_check("facade-pyo3-user", &["python"]);
+    cargo_check("facade-pyo3-user", &["stub-gen"]);
+    cargo_check("facade-pyo3-user", &["anyhow"]);
+    cargo_check("facade-pyo3-user", &["abi3-py39"]);
+}
+
+#[test]
+fn renamed_facade_user_compiles() {
+    cargo_check("renamed-facade-user", &["python"]);
+}
+
+#[test]
+fn direct_pyo3_override_user_compiles() {
+    cargo_check("direct-pyo3-override-user", &["python"]);
 }

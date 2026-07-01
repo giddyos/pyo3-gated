@@ -3,17 +3,26 @@
 `pyo3-gated` keeps normal Python builds separate from stub generation:
 
 ```toml
+[dependencies]
+pyo3-gated = "^0.1"
+
 [features]
 default = []
-python = ["dep:pyo3", "pyo3-gated/python"]
+python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 python-extension = [
     "python",
-    "pyo3/extension-module",
-    "pyo3/generate-import-lib",
+    "pyo3-gated/extension-module",
+    "pyo3-gated/generate-import-lib",
 ]
 ```
 
-The downstream crate owns its direct `pyo3` dependency and all PyO3 feature choices. `pyo3-gated/python` only tells the macros to emit PyO3 annotations. `pyo3-gated/stub-gen` enables `pyo3-stub-gen` integration.
+`pyo3-gated/python` enables `pyo3-gated`'s owned PyO3 dependency and tells the macros to emit PyO3 annotations against the facade re-export. `pyo3-gated/stub-gen` enables `pyo3-stub-gen` integration.
+
+When code needs explicit PyO3 types, import them from the facade:
+
+```rust,ignore
+use pyo3_gated::pyo3;
+```
 
 Use `feature = "name"` on macros when your downstream Python feature is not named `python`. Use `stub_gen = "name"` when stub registration is controlled by a different feature.

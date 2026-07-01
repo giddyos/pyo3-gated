@@ -10,17 +10,17 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
-python = ["dep:pyo3", "pyo3-gated/python"]
+python = ["pyo3-gated/python"]
 python-extension = [
     "python",
-    "pyo3/extension-module",
-    "pyo3/generate-import-lib",
+    "pyo3-gated/extension-module",
+    "pyo3-gated/generate-import-lib",
 ]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
+anyhow = ["python", "pyo3-gated/anyhow"]
 
 [dependencies]
 pyo3-gated = { path = "../../crates/pyo3-gated" }
-pyo3 = { workspace = true, optional = true, features = ["anyhow"] }
 anyhow = "1"
 
 [[bin]]

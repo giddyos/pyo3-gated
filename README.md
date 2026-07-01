@@ -10,17 +10,14 @@ Write Rust types once. Use them natively in Rust and optionally expose them to P
 
 ```toml
 [dependencies]
-pyo3-gated = "^0.1"
-pyo3       = { version = "0.28", optional = true }
+pyo3-gated = { version = "^0.1", features = ["python"] }
 
 [features]
 default = []
-python = ["dep:pyo3", "pyo3-gated/python"]
-stub-gen = ["python", "pyo3-gated/stub-gen"]
+stub-gen = ["pyo3-gated/stub-gen"]
 python-extension = [
-    "python",
-    "pyo3/extension-module",
-    "pyo3/generate-import-lib",
+    "pyo3-gated/extension-module",
+    "pyo3-gated/generate-import-lib",
 ]
 ```
 
@@ -83,7 +80,7 @@ pyo3_gated::define_py_module! {
 }
 ```
 
-`cargo build` compiles plain Rust without `pyo3`. `cargo build --features python` emits the PyO3 annotations without pulling stub-generation dependencies. `cargo run --bin stub_gen --features stub-gen` enables `pyo3-stub-gen` registration and stub output. Downstream crates own their direct `pyo3` dependency and features; `pyo3-stub-gen` is provided by `pyo3-gated` only behind `pyo3-gated/stub-gen`.
+`cargo build` compiles with `pyo3-gated`'s owned PyO3 dependency when `python` is enabled. `cargo run --bin stub_gen --features stub-gen` enables `pyo3-stub-gen` registration and stub output. Downstream crates do not need to depend on `pyo3` directly; use `pyo3_gated::pyo3` when explicit PyO3 types are needed.
 
 Before opening a PR, run `scripts/check.sh`. If your change affects stub generation, run `scripts/stub-check.sh` too.
 
@@ -94,20 +91,19 @@ Before opening a PR, run `scripts/check.sh`. If your change affects stub generat
 ```toml
 [dependencies]
 pyo3-gated = "^0.1"
-pyo3       = { version = "0.28", optional = true }
 
 [features]
 default = []
-python = ["dep:pyo3", "pyo3-gated/python"]
+python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 python-extension = [
     "python",
-    "pyo3/extension-module",
-    "pyo3/generate-import-lib",
+    "pyo3-gated/extension-module",
+    "pyo3-gated/generate-import-lib",
 ]
 ```
 
-This keeps PyO3 feature choices, such as `extension-module`, `generate-import-lib`, `abi3`, `anyhow`, or other conversion features, under the downstream crate's control.
+`pyo3-gated/python` enables the facade's owned PyO3 dependency. PyO3 features are exposed as `pyo3-gated` pass-through features such as `extension-module`, `generate-import-lib`, `abi3-py39`, `anyhow`, and other conversion features.
 
 ## Build Recipes
 
@@ -213,6 +209,8 @@ pub fn add(a: i32, b: i32) -> i32 {
 Use a Python-only free function when its signature uses PyO3 types:
 
 ```rust,ignore
+use pyo3_gated::pyo3;
+
 #[py_compat_fn(py_only)]
 pub fn inspect_py_object(obj: pyo3::Bound<'_, pyo3::types::PyAny>) -> pyo3::PyResult<String> {
     Ok(format!("{obj:?}"))
@@ -294,13 +292,13 @@ Advanced stub-generation APIs are available under `pyo3_gated::stub_gen` when `s
 
 | `pyo3-gated` version | Supported `pyo3` range | Bundled `pyo3-stub-gen` |
 |---|---|---|
-| `0.1.x` | `0.28` | `0.22.4` |
+| `0.1.x` | `0.28` | `0.23.0` |
 
-Downstream crates choose their direct `pyo3` dependency and PyO3 feature flags. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
+`pyo3-gated` owns and re-exports PyO3. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
 
 ## Troubleshooting
 
-`pyo3-gated: enabling the Python feature requires a direct optional pyo3 dependency`: your downstream `python` feature enabled `pyo3-gated/python` but not your direct PyO3 dependency. Use `python = ["dep:pyo3", "pyo3-gated/python"]`, or pass `pyo3_crate = "::your_path"` for unusual re-export layouts.
+Explicit PyO3 types fail to resolve: import PyO3 through the facade with `use pyo3_gated::pyo3;`. A direct `pyo3` dependency is not required for normal use and can create version conflicts if it is incompatible.
 
 `StubGenResult not found`: build the stub binary with the downstream `stub-gen` feature and wire that feature to `pyo3-gated/stub-gen`. Stub binaries should usually declare `required-features = ["stub-gen"]`.
 
@@ -356,13 +354,13 @@ Rust-only users only need:
 pyo3-gated = "^0.1"
 ```
 
-PyO3 field, variant, and function attributes are stripped from the plain build, so no direct `pyo3` dependency is required unless the Python feature is enabled.
+PyO3 field, variant, and function attributes are stripped from the plain build, so no PyO3 dependency is compiled unless the Python feature is enabled.
 
 ## Current Limitations
 
 - `#[py_compat_methods]` supports inherent `impl Type { ... }` blocks, not trait impls.
 - Users should not manually add `#[pyclass]`, `#[pymethods]`, `#[pyfunction]`, or `#[pymodule]` to items managed by these macros; the macros add them.
-- Python builds still require a direct `pyo3` dependency because downstream crates own PyO3 feature selection.
+- Python builds use the PyO3 version and feature set exposed by `pyo3-gated`.
 - Python-specific argument and return types still require cfg control for plain Rust builds.
 - `pyo3-gated` does not choose `abi3`, `extension-module`, `auto-initialize`, or conversion features for you.
 - Generic PyO3 classes and complex enums remain subject to PyO3 and `pyo3-stub-gen` limitations.

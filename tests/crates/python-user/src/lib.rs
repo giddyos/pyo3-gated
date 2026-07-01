@@ -1,4 +1,6 @@
 use pyo3_gated::prelude::*;
+#[cfg(all(feature = "python", not(feature = "stub-gen")))]
+use pyo3_gated::pyo3;
 
 pyo3_gated::define_pyo3_gated_stub_info!(stub_info);
 

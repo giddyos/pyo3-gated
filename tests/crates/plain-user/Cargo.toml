@@ -6,9 +6,8 @@ publish = false
 
 [features]
 default = []
-python = ["dep:pyo3", "pyo3-gated/python"]
+python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 
 [dependencies]
 pyo3-gated = { path = "../../../crates/pyo3-gated" }
-pyo3 = { workspace = true, optional = true }

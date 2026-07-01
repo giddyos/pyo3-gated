@@ -1,22 +1,14 @@
 [package]
-name = "stub-user"
+name = "direct-pyo3-override-user"
 version = "0.0.0"
 edition = "2024"
 publish = false
 
-[lib]
-name = "stub_user"
-
 [features]
 default = []
-python = ["pyo3-gated/python"]
+python = ["dep:py", "pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 
 [dependencies]
 pyo3-gated = { path = "../../../crates/pyo3-gated" }
-
-[[bin]]
-name = "stub_gen"
-path = "src/bin/stub_gen.rs"
-required-features = ["stub-gen"]
-doc = false
+py = { package = "pyo3", version = "0.28", optional = true }

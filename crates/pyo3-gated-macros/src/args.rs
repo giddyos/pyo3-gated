@@ -268,15 +268,9 @@ impl ModuleArgs {
 }
 
 fn crate_attr_literal(override_path: Option<&str>) -> Option<LitStr> {
-    let path = override_path.map(ToOwned::to_owned).or_else(|| {
-        crate::paths::resolved_pyo3_crate_name().and_then(|name| {
-            if name == "pyo3" {
-                None
-            } else {
-                Some(format!("::{name}"))
-            }
-        })
-    })?;
+    let path = override_path
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(crate::paths::pyo3_crate_attr_path);
     Some(LitStr::new(&path, proc_macro2::Span::call_site()))
 }
 

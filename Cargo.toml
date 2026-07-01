@@ -4,9 +4,12 @@ members = [
     "crates/pyo3-gated",
     "crates/pyo3-gated-macros",
     "examples/color-module",
+    "tests/crates/direct-pyo3-override-user",
+    "tests/crates/facade-pyo3-user",
     "tests/crates/plain-user",
     "tests/crates/python-user",
     "tests/crates/renamed-dep-user",
+    "tests/crates/renamed-facade-user",
     "tests/crates/renamed-pyo3-user",
     "tests/crates/stub-user",
 ]
@@ -24,7 +27,7 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
 proc-macro-crate = "3"
-pyo3 = "0.28"
+pyo3 = { version = "0.28", default-features = false, features = ["macros"] }
 pyo3-stub-gen = "0.23.0"
 trybuild = "1"
 macrotest = "1.2.1"

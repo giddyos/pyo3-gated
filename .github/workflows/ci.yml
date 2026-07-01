@@ -60,6 +60,7 @@ jobs:
         run: |
           cargo tree -d --workspace --features stub-gen
           cargo tree --workspace --features stub-gen -i pyo3
+          cargo tree -p facade-pyo3-user --features python -i pyo3
           versions="$(cargo tree --workspace --features stub-gen -i pyo3 | sed -n 's/^pyo3 v\([^ ]*\).*/\1/p' | sort -u)"
           count="$(printf '%s\n' "$versions" | sed '/^$/d' | wc -l | tr -d ' ')"
           if [ "$count" != "1" ]; then

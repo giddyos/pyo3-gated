@@ -1,22 +1,16 @@
 [package]
-name = "stub-user"
+name = "facade-pyo3-user"
 version = "0.0.0"
 edition = "2024"
 publish = false
-
-[lib]
-name = "stub_user"
 
 [features]
 default = []
 python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
+anyhow = ["python", "pyo3-gated/anyhow"]
+abi3-py39 = ["python", "pyo3-gated/abi3-py39"]
 
 [dependencies]
 pyo3-gated = { path = "../../../crates/pyo3-gated" }
-
-[[bin]]
-name = "stub_gen"
-path = "src/bin/stub_gen.rs"
-required-features = ["stub-gen"]
-doc = false
+anyhow = "1"
