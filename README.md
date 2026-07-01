@@ -16,8 +16,7 @@ pyo3-gated = { version = "^0.1", features = ["python"] }
 default = []
 stub-gen = ["pyo3-gated/stub-gen"]
 python-extension = [
-    "pyo3-gated/extension-module",
-    "pyo3-gated/generate-import-lib",
+    "pyo3-gated/python",
 ]
 ```
 
@@ -82,6 +81,8 @@ pyo3_gated::define_py_module! {
 
 `cargo build` compiles with `pyo3-gated`'s owned PyO3 dependency when `python` is enabled. `cargo run --bin stub_gen --features stub-gen` enables `pyo3-stub-gen` registration and stub output. Downstream crates do not need to depend on `pyo3` directly; use `pyo3_gated::pyo3` when explicit PyO3 types are needed.
 
+Use `maturin` for wheel builds. It sets PyO3's extension-module build environment for normal extension builds, so new projects should not add `pyo3-gated/generate-import-lib` by default.
+
 Before opening a PR, run `scripts/check.sh`. If your change affects stub generation, run `scripts/stub-check.sh` too.
 
 ## Feature Model
@@ -98,12 +99,12 @@ python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 python-extension = [
     "python",
-    "pyo3-gated/extension-module",
-    "pyo3-gated/generate-import-lib",
 ]
 ```
 
-`pyo3-gated/python` enables the facade's owned PyO3 dependency. PyO3 features are exposed as `pyo3-gated` pass-through features such as `extension-module`, `generate-import-lib`, `abi3-py39`, `anyhow`, and other conversion features.
+`pyo3-gated/python` enables the facade's owned PyO3 dependency. PyO3 features are exposed as `pyo3-gated` pass-through features such as `extension-module`, `abi3-py315`, `abi3t`, `abi3t-py315`, `anyhow`, and other conversion features.
+
+`extension-module` and `generate-import-lib` remain available as compatibility pass-throughs. For new extension builds, prefer `maturin` or set `PYO3_BUILD_EXTENSION_MODULE=1` directly when invoking Cargo. `generate-import-lib` is deprecated upstream in PyO3 0.29 and should not be part of new project templates.
 
 ## Build Recipes
 
@@ -115,7 +116,7 @@ cargo build
 cargo build --features python
 
 # Extension-module build
-cargo build --features python-extension
+PYO3_BUILD_EXTENSION_MODULE=1 cargo build --features python-extension
 
 # Build and install the example module with maturin
 maturin develop -m examples/color-module/pyproject.toml
@@ -294,11 +295,17 @@ Advanced stub-generation APIs are available under `pyo3_gated::stub_gen` when `s
 |---|---|---|
 | `0.1.x` | `0.29` | `0.23.0` |
 
-`pyo3-gated` owns and re-exports PyO3. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
+`pyo3-gated` owns and re-exports PyO3. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. PyO3 0.29 supports Python 3.8+ and no longer supports Python 3.7. Run stub-generation flows on Python 3.10+.
+
+PyO3 0.29 pass-through features include `abi3-py315`, `abi3t`, and `abi3t-py315`. ABI-selection features are exposed individually and are not included in `full`.
+
+Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
 
 ## Troubleshooting
 
 Explicit PyO3 types fail to resolve: import PyO3 through the facade with `use pyo3_gated::pyo3;`. A direct `pyo3` dependency is not required for normal use and can create version conflicts if it is incompatible.
+
+Duplicate PyO3 versions after upgrading: remove direct `pyo3` dependencies unless they are intentional, or update them to the same PyO3 line as `pyo3-gated`. Check the result with `cargo tree -i pyo3`.
 
 `StubGenResult not found`: build the stub binary with the downstream `stub-gen` feature and wire that feature to `pyo3-gated/stub-gen`. Stub binaries should usually declare `required-features = ["stub-gen"]`.
 

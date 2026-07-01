@@ -11,11 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = []
 python = ["pyo3-gated/python"]
-python-extension = [
-    "python",
-    "pyo3-gated/extension-module",
-    "pyo3-gated/generate-import-lib",
-]
+python-extension = ["python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 anyhow = ["python", "pyo3-gated/anyhow"]
 

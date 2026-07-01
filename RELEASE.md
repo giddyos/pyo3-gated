@@ -3,7 +3,8 @@
 1. Confirm README examples use the release version.
 2. Confirm `crates/pyo3-gated` and `crates/pyo3-gated-macros` have the same version.
 3. Confirm `pyo3-gated` depends on the exact matching `pyo3-gated-macros` version.
-4. Run:
+4. Confirm the compatibility notes are current: `pyo3-gated 0.1.x` targets PyO3 0.29, PyO3 no longer supports Python 3.7, stub-generation flows require Python 3.10+, and `generate-import-lib` is documented only as a compatibility pass-through.
+5. Run:
 
    ```bash
    scripts/check.sh
@@ -16,7 +17,7 @@
    `cargo package -p pyo3-gated` can only verify successfully after the matching
    `pyo3-gated-macros` version exists in the crates.io index.
 
-5. Publish in dependency order:
+6. Publish in dependency order:
 
    ```bash
    cargo publish -p pyo3-gated-macros

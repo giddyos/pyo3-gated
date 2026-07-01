@@ -28,3 +28,5 @@ fn main() -> pyo3_gated::StubGenResult<()> {
 ```
 
 Use `stub_gen = false` for internal items that should not appear in `.pyi` output.
+
+Run stub-generation flows on Python 3.10 or newer. `pyo3-gated 0.1.x` bundles `pyo3-stub-gen 0.23.0` with PyO3 0.29 support.
