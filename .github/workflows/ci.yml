@@ -41,7 +41,9 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Install cargo-expand
-        uses: taiki-e/install-action@cargo-expand
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-expand
 
       - name: Test workspace
         run: cargo test --workspace
