@@ -102,7 +102,8 @@ pub(crate) fn expand_methods(args: MacroArgs, input_impl: ItemImpl) -> TokenStre
     }
     if args.pyclass_args.is_some() {
         return syn::Error::new(
-            proc_macro2::Span::call_site(),
+            args.pyclass_args_span
+                .unwrap_or_else(proc_macro2::Span::call_site),
             "`pyclass_args` applies only to structs/enums",
         )
         .to_compile_error();

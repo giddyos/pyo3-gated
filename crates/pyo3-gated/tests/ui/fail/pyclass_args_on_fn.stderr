@@ -1,7 +1,5 @@
 error: `pyclass_args` applies only to structs/enums; use `pyfunction_args` for functions
- --> tests/ui/fail/pyclass_args_on_fn.rs:3:1
+ --> tests/ui/fail/pyclass_args_on_fn.rs:3:16
   |
 3 | #[py_compat_fn(pyclass_args(module = "bad"))]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `py_compat_fn` (in Nightly builds, run with -Z macro-backtrace for more info)
+  |                ^^^^^^^^^^^^

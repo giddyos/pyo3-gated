@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn::{
     LitBool, LitStr, Token,
     parse::{Parse, ParseStream},
@@ -9,10 +9,13 @@ pub(crate) struct MacroArgs {
     pub feature: String,
     pub stub_gen: StubGenMode,
     pub pyclass_args: Option<TokenStream>,
+    pub pyclass_args_span: Option<Span>,
     pub pyfunction_args: Option<TokenStream>,
+    pub pyfunction_args_span: Option<Span>,
     pub pyo3_crate: Option<TokenStream>,
     pub pyo3_crate_attr: Option<String>,
     pub py_only: bool,
+    pub py_only_span: Option<Span>,
 }
 
 pub(crate) struct ModuleArgs {
@@ -42,10 +45,13 @@ impl Default for MacroArgs {
             feature: "python".to_string(),
             stub_gen: StubGenMode::Feature("stub-gen".to_string()),
             pyclass_args: None,
+            pyclass_args_span: None,
             pyfunction_args: None,
+            pyfunction_args_span: None,
             pyo3_crate: None,
             pyo3_crate_attr: None,
             py_only: false,
+            py_only_span: None,
         }
     }
 }
@@ -55,10 +61,13 @@ impl Parse for MacroArgs {
         let mut feature = None::<String>;
         let mut stub_gen = RawStubGen::Unset;
         let mut pyclass_args = None::<TokenStream>;
+        let mut pyclass_args_span = None::<Span>;
         let mut pyfunction_args = None::<TokenStream>;
+        let mut pyfunction_args_span = None::<Span>;
         let mut pyo3_crate = None::<TokenStream>;
         let mut pyo3_crate_attr = None::<String>;
         let mut py_only = false;
+        let mut py_only_span = None::<Span>;
 
         while !input.is_empty() {
             let ident: syn::Ident = input.parse()?;
@@ -110,6 +119,7 @@ impl Parse for MacroArgs {
                             "duplicate `pyclass_args` argument",
                         ));
                     }
+                    pyclass_args_span = Some(ident.span());
                     let inner;
                     syn::parenthesized!(inner in input);
                     pyclass_args = Some(inner.parse::<TokenStream>()?);
@@ -121,6 +131,7 @@ impl Parse for MacroArgs {
                             "duplicate `pyfunction_args` argument",
                         ));
                     }
+                    pyfunction_args_span = Some(ident.span());
                     let inner;
                     syn::parenthesized!(inner in input);
                     pyfunction_args = Some(inner.parse::<TokenStream>()?);
@@ -154,6 +165,7 @@ impl Parse for MacroArgs {
                         ));
                     }
                     py_only = true;
+                    py_only_span = Some(ident.span());
                 }
                 other => {
                     return Err(syn::Error::new(
@@ -179,10 +191,13 @@ impl Parse for MacroArgs {
             feature,
             stub_gen,
             pyclass_args,
+            pyclass_args_span,
             pyfunction_args,
+            pyfunction_args_span,
             pyo3_crate,
             pyo3_crate_attr,
             py_only,
+            py_only_span,
         })
     }
 }
@@ -205,13 +220,15 @@ impl MacroArgs {
     pub(crate) fn reject_fn_only_args(&self) -> Option<syn::Error> {
         if self.pyfunction_args.is_some() {
             return Some(syn::Error::new(
-                proc_macro2::Span::call_site(),
+                self.pyfunction_args_span
+                    .unwrap_or_else(proc_macro2::Span::call_site),
                 "`pyfunction_args` applies only to `#[py_compat_fn]` and function items passed to `#[py_compat]`",
             ));
         }
         if self.py_only {
             return Some(syn::Error::new(
-                proc_macro2::Span::call_site(),
+                self.py_only_span
+                    .unwrap_or_else(proc_macro2::Span::call_site),
                 "`py_only` applies only to `#[py_compat_fn]` and function items passed to `#[py_compat]`",
             ));
         }
@@ -221,7 +238,8 @@ impl MacroArgs {
     pub(crate) fn reject_class_only_args_on_fn(&self) -> Option<syn::Error> {
         if self.pyclass_args.is_some() {
             return Some(syn::Error::new(
-                proc_macro2::Span::call_site(),
+                self.pyclass_args_span
+                    .unwrap_or_else(proc_macro2::Span::call_site),
                 "`pyclass_args` applies only to structs/enums; use `pyfunction_args` for functions",
             ));
         }
