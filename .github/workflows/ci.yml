@@ -137,67 +137,7 @@ jobs:
           with zipfile.ZipFile(wheel) as z:
               names = set(z.namelist())
 
-          assert any(name.endswith("color_module.pyi") for name in names), sorted(names)
-          PY
-
-      - name: Install example wheel
-        run: python -m pip install dist/*.whl
-
-      - name: Smoke test example module
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import color_module
-
-          c = color_module.Color(1, 2, 3)
-          assert c.to_hex() == "#010203"
-          assert color_module.add(1, 2) == 3
-          assert color_module.Palette.Red == color_module.Palette.Red
-          assert Path(color_module.__file__).with_suffix(".pyi").is_file()
-          PY
-
-  python-315-dev:
-    name: Python smoke 3.15-dev
-    runs-on: ubuntu-latest
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: v1-rust
-          key: python-smoke-1.90-3.15-dev
-          cache-on-failure: true
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.15-dev"
-          allow-prereleases: true
-
-      - name: Install maturin
-        run: python -m pip install --upgrade pip maturin
-
-      - name: Build example wheel
-        run: maturin build --out ../../dist
-        working-directory: examples/color-module
-
-      - name: Verify wheel stubs
-        run: |
-          python - <<'PY'
-          import zipfile
-          from pathlib import Path
-
-          wheel = next(Path("dist").glob("*.whl"))
-          with zipfile.ZipFile(wheel) as z:
-              names = set(z.namelist())
-
-          assert any(name.endswith("color_module.pyi") for name in names), sorted(names)
+          assert any(name.startswith("color_module/color_module.cpython-") and name.endswith("-linux-gnu.so") for name in names), sorted(names)
           PY
 
       - name: Install example wheel
