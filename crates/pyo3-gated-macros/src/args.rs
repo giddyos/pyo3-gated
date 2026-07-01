@@ -276,13 +276,16 @@ fn crate_attr_literal(override_path: Option<&str>) -> Option<LitStr> {
 
 impl Parse for ModuleArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut feature = "python".to_string();
+        let mut feature = None::<String>;
         let mut pyo3_crate = None::<TokenStream>;
         let mut pyo3_crate_attr = None::<String>;
         let mut module = None::<syn::Ident>;
         let mut classes = Vec::<syn::Type>::new();
+        let mut classes_seen = false;
         let mut functions = Vec::<syn::Path>::new();
+        let mut functions_seen = false;
         let mut constants = Vec::<ModuleConstant>::new();
+        let mut constants_seen = false;
         let mut init = None::<ExprClosure>;
         let mut doc = None::<LitStr>;
 
@@ -290,14 +293,23 @@ impl Parse for ModuleArgs {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
                 "feature" => {
+                    if feature.is_some() {
+                        return Err(syn::Error::new(ident.span(), "duplicate `feature` entry"));
+                    }
                     input.parse::<Token![=]>()?;
                     let value = input.parse::<LitStr>()?.value();
                     if value.is_empty() {
                         return Err(syn::Error::new(ident.span(), "`feature` must not be empty"));
                     }
-                    feature = value;
+                    feature = Some(value);
                 }
                 "pyo3_crate" => {
+                    if pyo3_crate.is_some() {
+                        return Err(syn::Error::new(
+                            ident.span(),
+                            "duplicate `pyo3_crate` entry",
+                        ));
+                    }
                     input.parse::<Token![=]>()?;
                     let value = input.parse::<LitStr>()?.value();
                     if value.is_empty() {
@@ -319,6 +331,10 @@ impl Parse for ModuleArgs {
                     module = Some(input.parse()?);
                 }
                 "classes" => {
+                    if classes_seen {
+                        return Err(syn::Error::new(ident.span(), "duplicate `classes` entry"));
+                    }
+                    classes_seen = true;
                     input.parse::<Token![:]>()?;
                     let content;
                     syn::bracketed!(content in input);
@@ -327,6 +343,10 @@ impl Parse for ModuleArgs {
                         .collect();
                 }
                 "functions" => {
+                    if functions_seen {
+                        return Err(syn::Error::new(ident.span(), "duplicate `functions` entry"));
+                    }
+                    functions_seen = true;
                     input.parse::<Token![:]>()?;
                     let content;
                     syn::bracketed!(content in input);
@@ -335,6 +355,10 @@ impl Parse for ModuleArgs {
                         .collect();
                 }
                 "constants" => {
+                    if constants_seen {
+                        return Err(syn::Error::new(ident.span(), "duplicate `constants` entry"));
+                    }
+                    constants_seen = true;
                     input.parse::<Token![:]>()?;
                     let content;
                     syn::bracketed!(content in input);
@@ -377,6 +401,7 @@ impl Parse for ModuleArgs {
                 "`define_py_module!` requires `module <name>;`",
             )
         })?;
+        let feature = feature.unwrap_or_else(|| "python".to_string());
 
         Ok(Self {
             feature,
