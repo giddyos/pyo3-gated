@@ -19,8 +19,12 @@ env:
 
 jobs:
   rust:
-    name: Rust 1.90
+    name: Rust 1.90 / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v7
@@ -32,13 +36,13 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
         with:
           prefix-key: v1-rust
-          key: rust-1.90
+          key: rust-1.90-python-${{ matrix.python-version }}
           cache-on-failure: true
 
       - name: Install cargo-expand
@@ -88,8 +92,12 @@ jobs:
           exit "$package_status"
 
   python:
-    name: Python smoke
+    name: Python smoke ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v7
@@ -102,12 +110,57 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           prefix-key: v1-rust
-          key: python-smoke-1.90
+          key: python-smoke-1.90-${{ matrix.python-version }}
           cache-on-failure: true
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install maturin
+        run: python -m pip install --upgrade pip maturin
+
+      - name: Build example wheel
+        run: maturin build --out ../../dist
+        working-directory: examples/color-module
+
+      - name: Install example wheel
+        run: python -m pip install dist/*.whl
+
+      - name: Smoke test example module
+        run: |
+          python - <<'PY'
+          import color_module
+
+          c = color_module.Color(1, 2, 3)
+          assert c.to_hex() == "#010203"
+          assert color_module.add(1, 2) == 3
+          assert color_module.Palette.Red == color_module.Palette.Red
+          PY
+
+  python-315-dev:
+    name: Python smoke 3.15-dev
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-rust
+          key: python-smoke-1.90-3.15-dev
+          cache-on-failure: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.15-dev"
+          allow-prereleases: true
 
       - name: Install maturin
         run: python -m pip install --upgrade pip maturin
