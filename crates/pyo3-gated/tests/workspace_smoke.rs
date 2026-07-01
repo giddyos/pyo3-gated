@@ -1,8 +1,26 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+fn workspace_root() -> PathBuf {
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let candidate = manifest_dir.join("../..");
+
+    if candidate.join("Cargo.toml").exists() && candidate.join("crates").exists() {
+        candidate
+    } else {
+        manifest_dir.to_path_buf()
+    }
+}
+
+fn configure_cargo_command(cmd: &mut Command) {
+    if std::env::var_os("CARGO_TARGET_DIR").is_none() {
+        cmd.env("CARGO_TARGET_DIR", workspace_root().join("target"));
+    }
+}
 
 fn cargo_check(package: &str, features: &[&str]) {
     let mut cmd = Command::new("cargo");
+    configure_cargo_command(&mut cmd);
     cmd.arg("check").arg("-p").arg(package);
 
     if !features.is_empty() {
@@ -15,6 +33,7 @@ fn cargo_check(package: &str, features: &[&str]) {
 
 fn cargo_check_manifest(manifest_path: &str, features: &[&str]) {
     let mut cmd = Command::new("cargo");
+    configure_cargo_command(&mut cmd);
     cmd.arg("check").arg("--manifest-path").arg(manifest_path);
 
     if !features.is_empty() {
@@ -39,6 +58,7 @@ fn fixture_manifest(relative_path: &str) -> String {
 
 fn cargo_check_manifest_fails(manifest_path: &str, features: &[&str], expected: &str) {
     let mut cmd = Command::new("cargo");
+    configure_cargo_command(&mut cmd);
     cmd.arg("check").arg("--manifest-path").arg(manifest_path);
 
     if !features.is_empty() {
