@@ -50,6 +50,9 @@ jobs:
         with:
           tool: cargo-expand
 
+      - name: Install maturin
+        run: python -m pip install --upgrade pip maturin
+
       - name: Check workspace
         env:
           PYO3_PYTHON: python
@@ -124,18 +127,33 @@ jobs:
         run: maturin build --out ../../dist
         working-directory: examples/color-module
 
+      - name: Verify wheel stubs
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+
+          wheel = next(Path("dist").glob("*.whl"))
+          with zipfile.ZipFile(wheel) as z:
+              names = set(z.namelist())
+
+          assert any(name.endswith("color_module.pyi") for name in names), sorted(names)
+          PY
+
       - name: Install example wheel
         run: python -m pip install dist/*.whl
 
       - name: Smoke test example module
         run: |
           python - <<'PY'
+          from pathlib import Path
           import color_module
 
           c = color_module.Color(1, 2, 3)
           assert c.to_hex() == "#010203"
           assert color_module.add(1, 2) == 3
           assert color_module.Palette.Red == color_module.Palette.Red
+          assert Path(color_module.__file__).with_suffix(".pyi").is_file()
           PY
 
   python-315-dev:
@@ -169,16 +187,31 @@ jobs:
         run: maturin build --out ../../dist
         working-directory: examples/color-module
 
+      - name: Verify wheel stubs
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+
+          wheel = next(Path("dist").glob("*.whl"))
+          with zipfile.ZipFile(wheel) as z:
+              names = set(z.namelist())
+
+          assert any(name.endswith("color_module.pyi") for name in names), sorted(names)
+          PY
+
       - name: Install example wheel
         run: python -m pip install dist/*.whl
 
       - name: Smoke test example module
         run: |
           python - <<'PY'
+          from pathlib import Path
           import color_module
 
           c = color_module.Color(1, 2, 3)
           assert c.to_hex() == "#010203"
           assert color_module.add(1, 2) == 3
           assert color_module.Palette.Red == color_module.Palette.Red
+          assert Path(color_module.__file__).with_suffix(".pyi").is_file()
           PY

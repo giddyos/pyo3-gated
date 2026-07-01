@@ -9,4 +9,5 @@ requires-python = ">=3.8"
 
 [tool.maturin]
 features = ["python-extension"]
+include = [{ path = "color_module.pyi", format = "wheel" }]
 module-name = "color_module"
