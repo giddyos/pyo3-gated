@@ -8,6 +8,9 @@ cargo check -p facade-pyo3-user --features python
 cargo check -p facade-pyo3-user --features stub-gen
 cargo check -p facade-pyo3-user --features anyhow
 cargo check -p facade-pyo3-user --features abi3-py39
+PYO3_CROSS=1 PYO3_CROSS_PYTHON_VERSION=3.15 cargo check -p facade-pyo3-user --features abi3-py315
+cargo check -p facade-pyo3-user --features abi3t-py315
+cargo check -p facade-pyo3-user --features experimental-inspect
 cargo check -p renamed-facade-user --features python
 cargo check -p direct-pyo3-override-user --features python
 cargo tree --workspace --features stub-gen -i pyo3

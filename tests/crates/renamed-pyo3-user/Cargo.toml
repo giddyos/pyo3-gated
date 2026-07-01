@@ -14,4 +14,4 @@ stub-gen = ["python", "pyo3-gated/stub-gen"]
 
 [dependencies]
 pyo3-gated = { path = "../../../crates/pyo3-gated" }
-py = { package = "pyo3", version = "0.28", optional = true }
+py = { package = "pyo3", version = "0.29", optional = true, default-features = false, features = ["macros"] }

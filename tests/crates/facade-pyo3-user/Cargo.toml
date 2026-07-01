@@ -10,6 +10,9 @@ python = ["pyo3-gated/python"]
 stub-gen = ["python", "pyo3-gated/stub-gen"]
 anyhow = ["python", "pyo3-gated/anyhow"]
 abi3-py39 = ["python", "pyo3-gated/abi3-py39"]
+abi3-py315 = ["python", "pyo3-gated/abi3-py315"]
+abi3t-py315 = ["python", "pyo3-gated/abi3t-py315"]
+experimental-inspect = ["python", "pyo3-gated/experimental-inspect"]
 
 [dependencies]
 pyo3-gated = { path = "../../../crates/pyo3-gated" }

@@ -292,7 +292,7 @@ Advanced stub-generation APIs are available under `pyo3_gated::stub_gen` when `s
 
 | `pyo3-gated` version | Supported `pyo3` range | Bundled `pyo3-stub-gen` |
 |---|---|---|
-| `0.1.x` | `0.28` | `0.23.0` |
+| `0.1.x` | `0.29` | `0.23.0` |
 
 `pyo3-gated` owns and re-exports PyO3. The `stub-gen` feature uses the `pyo3-stub-gen` version bundled by `pyo3-gated`, so stub-generation support is tied to the PyO3 version supported by that `pyo3-stub-gen` release. Use `cargo tree -d --workspace --features stub-gen` and `cargo tree --workspace --features stub-gen -i pyo3` to verify that your workspace resolves a single compatible PyO3 version.
 
