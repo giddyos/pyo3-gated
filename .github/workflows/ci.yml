@@ -7,25 +7,20 @@ on:
 
 jobs:
   rust:
-    name: Rust (${{ matrix.rust }})
+    name: Rust 1.90
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: ["1.90.0", stable]
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: 1.90.0
           components: rustfmt, clippy
 
       - run: cargo fmt --all --check
       - run: cargo check --workspace --all-targets
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo install cargo-expand --locked
-        if: matrix.rust == 'stable'
       - run: cargo test --workspace
       - run: cargo doc --workspace --all-features --no-deps
       - run: cargo package -p pyo3-gated-macros --allow-dirty
@@ -50,7 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.90.0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
