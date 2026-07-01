@@ -1,6 +1,6 @@
 # Release Checklist
 
-1. Update `CHANGELOG.md` and confirm README examples use the release version.
+1. Confirm README examples use the release version.
 2. Confirm `crates/pyo3-gated` and `crates/pyo3-gated-macros` have the same version.
 3. Confirm `pyo3-gated` depends on the exact matching `pyo3-gated-macros` version.
 4. Run:
