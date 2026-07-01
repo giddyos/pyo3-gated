@@ -20,10 +20,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_VERSION }}
           components: rustfmt, clippy
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
@@ -38,9 +43,13 @@ jobs:
           tool: cargo-expand
 
       - name: Check workspace
+        env:
+          PYO3_PYTHON: python
         run: scripts/check.sh
 
       - name: Verify generated stubs
+        env:
+          PYO3_PYTHON: python
         run: scripts/stub-check.sh
 
       - name: Check PyO3 compatibility tree
