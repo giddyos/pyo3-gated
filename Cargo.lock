@@ -762,7 +762,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-gated"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "macrotest",
  "pyo3",
